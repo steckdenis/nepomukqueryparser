@@ -12,7 +12,7 @@ QVector<Nepomuk2::Query::Term> PassSentBy::run(const QVector<Nepomuk2::Query::Te
 
     // TODO: Query Nepomuk for the resource identifier of the sender
     rs.append(Nepomuk2::Query::ComparisonTerm(
-        Nepomuk2::Vocabulary::NMO::sender(),
+        Nepomuk2::Vocabulary::NMO::messageFrom(),
         Nepomuk2::Query::LiteralTerm(value),
         Nepomuk2::Query::ComparisonTerm::Equal
     ));
