@@ -203,7 +203,7 @@ bool Parser::Private::match(const Nepomuk2::Query::Term &term, const QString &pa
 
         QString value = term.toLiteralTerm().value().toString();
 
-        return (value == pattern);
+        return value.compare(pattern, Qt::CaseInsensitive) == 0;
     }
 
     // Parse the index and the name of a pattern like "<name0>"
