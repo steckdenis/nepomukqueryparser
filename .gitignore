@@ -1,0 +1,5 @@
+parser
+*.o
+*.kdev4
+*~
+Makefile
