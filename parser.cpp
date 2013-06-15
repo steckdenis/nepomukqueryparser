@@ -94,17 +94,20 @@ void Parser::parse(const QString &query)
 
 QStringList Parser::Private::split(const QString &query, bool split_separators)
 {
-    QString spaces(i18nc("List of spacing characters in your locale", " \t\n"));
-    QString separators(i18nc("Characters that are kept in the query for further processing but are considered word boundaries", ".,;:!?()[]{}<>="));
+    QString separators;
     QStringList parts;
     QString part;
     int size = query.size();
     bool between_quotes = false;
 
+    if (split_separators) {
+        separators = i18nc("Characters that are kept in the query for further processing but are considered word boundaries", ".,;:!?()[]{}<>=");
+    }
+
     for (int i=0; i<size; ++i) {
         QChar c = query.at(i);
 
-        if (!between_quotes && (spaces.contains(c) || (split_separators && separators.contains(c)))) {
+        if (!between_quotes && (c.isSpace() || (split_separators && separators.contains(c)))) {
             // A part may be empty if more than one space are found in block in the input
             if (part.size() > 0) {
                 parts.append(part);
