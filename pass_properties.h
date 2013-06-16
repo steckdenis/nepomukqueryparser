@@ -17,29 +17,23 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "pass_sentby.h"
-#include "utils.h"
+#ifndef __PASS_PROPERTIES_H__
+#define __PASS_PROPERTIES_H__
 
-#include <nepomuk2/literalterm.h>
-#include <nepomuk2/comparisonterm.h>
-#include <nepomuk2/property.h>
-#include <nepomuk2/nmo.h>
+#include <QVector>
+#include <QUrl>
 
-QVector<Nepomuk2::Query::Term> PassSentBy::run(const QVector<Nepomuk2::Query::Term> &match) const
+namespace Nepomuk2 { namespace Query { class Term; }}
+
+class PassProperties
 {
-    QVector<Nepomuk2::Query::Term> rs;
-    QString value = termStringValue(match.at(0));
+    public:
+        void setProperty(const QUrl &property);
 
-    if (value.isNull()) {
-        return rs;
-    }
+        QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
 
-    // TODO: Query Nepomuk for the resource identifier of the sender
-    rs.append(Nepomuk2::Query::ComparisonTerm(
-        Nepomuk2::Vocabulary::NMO::messageFrom(),
-        Nepomuk2::Query::LiteralTerm(value),
-        Nepomuk2::Query::ComparisonTerm::Equal
-    ));
+    private:
+        QUrl property;
+};
 
-    return rs;
-}
+#endif

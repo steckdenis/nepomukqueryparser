@@ -23,14 +23,15 @@
 #include "pass_numbers.h"
 #include "pass_filesize.h"
 #include "pass_typehints.h"
-#include "pass_sentby.h"
+#include "pass_properties.h"
 #include "pass_comparators.h"
 
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/property.h>
 #include <nepomuk2/nfo.h>
-#include <nepomuk2/nao.h>
+#include <nepomuk2/nmo.h>
 #include <soprano/literalvalue.h>
+#include <soprano/nao.h>
 #include <klocalizedstring.h>
 
 #include <QVector>
@@ -53,8 +54,8 @@ struct Parser::Private
     PassNumbers pass_numbers;
     PassFileSize pass_filesize;
     PassTypeHints pass_typehints;
-    PassSentBy pass_sentby;
     PassComparators pass_comparators;
+    PassProperties pass_properties;
 };
 
 Parser::Parser()
@@ -98,8 +99,6 @@ void Parser::parse(const QString &query)
         progress |= d->runPass(d->pass_numbers, "%1", 1);
         progress |= d->runPass(d->pass_filesize, "%1 %2", 2);
         progress |= d->runPass(d->pass_typehints, "%1", 1);
-        progress |= d->runPass(d->pass_sentby,
-            i18nc("Sender of an email", "sent by %1;from %1"), 1);
 
         // Comparators
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Contains);
@@ -107,13 +106,32 @@ void Parser::parse(const QString &query)
             i18nc("Equality", "(contains|containing) %1"), 1);
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Greater);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Strictly greater", "(greater|bigger|more) than %1;\\> %1"), 1);
+            i18nc("Strictly greater", "(greater|bigger|more) than %1;at least %1;\\> %1"), 1);
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Smaller);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Strictly smaller", "(smaller|less|lesser) than %1;\\< %1"), 1);
+            i18nc("Strictly smaller", "(smaller|less|lesser) than %1;at most %1;\\< %1"), 1);
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Equal);
         progress |= d->runPass(d->pass_comparators,
             i18nc("Equality", "(equal|equals|=) %1;equal to %1"), 1);
+
+        // Email-related properties
+        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageFrom());
+        progress |= d->runPass(d->pass_properties,
+            i18nc("Sender of an e-mail", "sent by %1;from %1;sender is %1;sender %1"), 1);
+        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageSubject());
+        progress |= d->runPass(d->pass_properties,
+            i18nc("Title of an e-mail", "title %1"), 1);
+        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageRecipient());
+        progress |= d->runPass(d->pass_properties,
+            i18nc("Recipient of an e-mail", "sent to %1;to %1;recipient is %1;recipient %1"), 1);
+
+        // File-related properties
+        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileSize());
+        progress |= d->runPass(d->pass_properties,
+            i18nc("Size of a file", "size is %1;size %1;being %1 large;%1 large"), 1);
+        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileName());
+        progress |= d->runPass(d->pass_properties,
+            i18nc("Name of a file", "name %1;named %1"), 1);
     }
 
     // Print the terms
@@ -181,10 +199,12 @@ bool Parser::Private::runPass(const T &pass, const QString &pattern, int match_c
         // Try to match the rule into the list of terms
         for (int i=0; i<terms.size(); ++i) {
             const Nepomuk2::Query::Term &term = terms.at(i);
-            int index;
+            int index = -1;
 
             if (match(term, parts.at(part_index), index)) {
-                matched_terms[index] = term;
+                if (index != -1) {
+                    matched_terms[index] = term;
+                }
 
                 if (first_match_index == -1) {
                     first_match_index = i;

@@ -17,7 +17,7 @@ HEADERS += parser.h \
            pass_numbers.h \
            pass_filesize.h \
            pass_typehints.h \
-           pass_sentby.h \
+           pass_properties.h \
            pass_comparators.h
 
 SOURCES += main.cpp \
@@ -27,5 +27,5 @@ SOURCES += main.cpp \
            pass_numbers.cpp \
            pass_filesize.cpp \
            pass_typehints.cpp \
-           pass_sentby.cpp \
+           pass_properties.cpp \
            pass_comparators.cpp
