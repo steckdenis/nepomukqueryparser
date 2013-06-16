@@ -24,8 +24,12 @@
 #include "pass_filesize.h"
 #include "pass_typehints.h"
 #include "pass_sentby.h"
+#include "pass_comparators.h"
 
 #include <nepomuk2/literalterm.h>
+#include <nepomuk2/property.h>
+#include <nepomuk2/nfo.h>
+#include <nepomuk2/nao.h>
 #include <soprano/literalvalue.h>
 #include <klocalizedstring.h>
 
@@ -50,6 +54,7 @@ struct Parser::Private
     PassFileSize pass_filesize;
     PassTypeHints pass_typehints;
     PassSentBy pass_sentby;
+    PassComparators pass_comparators;
 };
 
 Parser::Parser()
@@ -99,6 +104,20 @@ void Parser::parse(const QString &query)
             "<string0>", 1);
         progress |= d->runPass(d->pass_sentby,
             i18nc("Sender of an email", "sent by <string0>;from <string0>"), 1);
+
+        // Comparators
+        d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Contains);
+        progress |= d->runPass(d->pass_comparators,
+            i18nc("Equality", "(contains|containing) <term0>"), 1);
+        d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Greater);
+        progress |= d->runPass(d->pass_comparators,
+            i18nc("Strictly greater", "(greater|bigger|more) than <term0>;\\> <term0>"), 1);
+        d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Smaller);
+        progress |= d->runPass(d->pass_comparators,
+            i18nc("Strictly smaller", "(smaller|less|lesser) than <term0>;\\< <term0>"), 1);
+        d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Equal);
+        progress |= d->runPass(d->pass_comparators,
+            i18nc("Equality", "(equal|equals|=) <term0>;equal to <term0>"), 1);
     }
 
     // Print the terms
@@ -232,24 +251,38 @@ bool Parser::Private::match(const Nepomuk2::Query::Term &term, const QString &pa
     QString name = pattern.mid(1, pattern.size() - 3);
     index = pattern.at(pattern.size() - 2).digitValue();
 
-    // Match type hints
-    if (name == "type") {
+    // Match term types
+    if (name == "term") {
+        return true;
+    } else if (name == "type") {
         return term.isResourceTerm();
+    } else if (name == "literal") {
+        return term.isLiteralTerm();
+    } else if (name == "comparison") {
+        return term.isComparisonTerm();
     }
 
-    // Match literal types
-    if (term.isLiteralTerm())
-    {
+    // Match literal sub-types
+    if (term.isLiteralTerm()) {
         Soprano::LiteralValue value = term.toLiteralTerm().value();
 
-        if (name == "literal") {
-            return true;
-        } else if (name == "integer") {
+        if (name == "integer") {
             return value.isInt() || value.isInt64();
         } else if (name == "double") {
             return value.isDouble();
         } else if (name == "string") {
             return value.isString();
+        }
+    }
+
+    // Match comparisons
+    if (term.isComparisonTerm()) {
+        QUrl uri = term.toComparisonTerm().property().uri();
+
+        if (name == "filesize") {
+            return uri == Nepomuk2::Vocabulary::NFO::fileSize();
+        } else if (name == "tag") {
+            return uri == Nepomuk2::Vocabulary::NAO::hasTag();
         }
     }
 
