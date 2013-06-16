@@ -38,7 +38,7 @@ struct Parser::Private
     QStringList split(const QString &query, bool split_separators);
 
     template<typename T>
-    void runPass(const T &pass, const QString &pattern, int match_count);
+    bool runPass(const T &pass, const QString &pattern, int match_count);
     bool match(const Nepomuk2::Query::Term &term, const QString &pattern, int &index);
 
     // Terms on which the parser works
@@ -84,16 +84,22 @@ void Parser::parse(const QString &query)
     }
 
     // Parse passes
-    d->runPass(d->pass_splitunits,
-        "<string0>", 1);
-    d->runPass(d->pass_numbers,
-        "<string0>", 1);
-    d->runPass(d->pass_filesize,
-        "<integer0> <string1>", 2);
-    d->runPass(d->pass_typehints,
-        "<string0>", 1);
-    d->runPass(d->pass_sentby,
-        i18nc("Sender of an email", "sent by <string0>;from <string0>"), 1);
+    bool progress = true;
+
+    while (progress) {
+        progress = false;
+
+        progress |= d->runPass(d->pass_splitunits,
+            "<string0>", 1);
+        progress |= d->runPass(d->pass_numbers,
+            "<string0>", 1);
+        progress |= d->runPass(d->pass_filesize,
+            "<integer0> <string1>", 2);
+        progress |= d->runPass(d->pass_typehints,
+            "<string0>", 1);
+        progress |= d->runPass(d->pass_sentby,
+            i18nc("Sender of an email", "sent by <string0>;from <string0>"), 1);
+    }
 
     // Print the terms
     Q_FOREACH(const Nepomuk2::Query::Term &term, d->terms) {
@@ -142,9 +148,10 @@ QStringList Parser::Private::split(const QString &query, bool split_separators)
 }
 
 template<typename T>
-void Parser::Private::runPass(const T &pass, const QString &pattern, int match_count)
+bool Parser::Private::runPass(const T &pass, const QString &pattern, int match_count)
 {
     QVector<Nepomuk2::Query::Term> matched_terms(match_count);
+    bool progress = false;
 
     // Split the pattern at ";" characters, as a locale can have more than one
     // pattern that can be used for a given rule
@@ -181,6 +188,7 @@ void Parser::Private::runPass(const T &pass, const QString &pattern, int match_c
                         }
 
                         // Re-explore the terms vector as indexes have changed
+                        progress = true;
                         i = -1;
                     }
 
@@ -196,6 +204,7 @@ void Parser::Private::runPass(const T &pass, const QString &pattern, int match_c
         }
     }
 
+    return progress;
 }
 
 bool Parser::Private::match(const Nepomuk2::Query::Term &term, const QString &pattern, int &index)
