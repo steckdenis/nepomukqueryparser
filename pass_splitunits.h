@@ -17,19 +17,24 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef __PASS_NUMBERS_H__
-#define __PASS_NUMBERS_H__
+#ifndef __PASS_SPLITUNITS_H__
+#define __PASS_SPLITUNITS_H__
 
+#include <QString>
 #include <QVector>
+#include <QSet>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
 
-class PassNumbers
+class PassSplitUnits
 {
     public:
-        PassNumbers();
+        PassSplitUnits();
 
         QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
+
+    private:
+        QSet<QString> known_units;
 };
 
 #endif

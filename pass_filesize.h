@@ -17,19 +17,27 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef __PASS_NUMBERS_H__
-#define __PASS_NUMBERS_H__
+#ifndef __PASS_FILESIZE_H__
+#define __PASS_FILESIZE_H__
 
+#include <QString>
 #include <QVector>
+#include <QHash>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
 
-class PassNumbers
+class PassFileSize
 {
     public:
-        PassNumbers();
+        PassFileSize();
 
         QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
+
+    private:
+        void registerUnits(long long int multiplier, const QString &units);
+
+    private:
+        QHash<QString, long long int> multipliers;
 };
 
 #endif

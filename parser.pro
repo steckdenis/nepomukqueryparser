@@ -4,12 +4,24 @@
 
 CONFIG += debug
 TEMPLATE = app
-TARGET = 
+TARGET = parser
 DEPENDPATH += .
 INCLUDEPATH += .
 QT -= gui
 LIBS += -lnepomukcore -lkdecore -lsoprano
 
 # Input
-HEADERS += parser.h pass_numbers.h pass_typehints.h pass_sentby.h
-SOURCES += main.cpp parser.cpp pass_numbers.cpp pass_typehints.cpp pass_sentby.cpp
+HEADERS += parser.h \
+           pass_splitunits.h \
+           pass_numbers.h \
+           pass_filesize.h \
+           pass_typehints.h \
+           pass_sentby.h
+
+SOURCES += main.cpp \
+           parser.cpp \
+           pass_splitunits.cpp \
+           pass_numbers.cpp \
+           pass_filesize.cpp \
+           pass_typehints.cpp \
+           pass_sentby.cpp

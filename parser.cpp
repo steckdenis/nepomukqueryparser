@@ -19,7 +19,9 @@
 
 #include "parser.h"
 
+#include "pass_splitunits.h"
 #include "pass_numbers.h"
+#include "pass_filesize.h"
 #include "pass_typehints.h"
 #include "pass_sentby.h"
 
@@ -43,7 +45,9 @@ struct Parser::Private
     QVector<Nepomuk2::Query::Term> terms;
 
     // Parsing passes (they cache translations, queries, etc)
+    PassSplitUnits pass_splitunits;
     PassNumbers pass_numbers;
+    PassFileSize pass_filesize;
     PassTypeHints pass_typehints;
     PassSentBy pass_sentby;
 };
@@ -80,8 +84,12 @@ void Parser::parse(const QString &query)
     }
 
     // Parse passes
+    d->runPass(d->pass_splitunits,
+        "<string0>", 1);
     d->runPass(d->pass_numbers,
         "<string0>", 1);
+    d->runPass(d->pass_filesize,
+        "<integer0> <string1>", 2);
     d->runPass(d->pass_typehints,
         "<string0>", 1);
     d->runPass(d->pass_sentby,
