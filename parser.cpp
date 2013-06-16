@@ -28,6 +28,7 @@
 #include <klocalizedstring.h>
 
 #include <QVector>
+#include <QRegExp>
 #include <QtDebug>
 
 struct Parser::Private
@@ -84,7 +85,7 @@ void Parser::parse(const QString &query)
     d->runPass(d->pass_typehints,
         "<string0>", 1);
     d->runPass(d->pass_sentby,
-        i18nc("Sender of an email", "sent by <string0>|from <string0>"), 1);
+        i18nc("Sender of an email", "sent by <string0>;from <string0>"), 1);
 
     // Print the terms
     Q_FOREACH(const Nepomuk2::Query::Term &term, d->terms) {
@@ -137,9 +138,9 @@ void Parser::Private::runPass(const T &pass, const QString &pattern, int match_c
 {
     QVector<Nepomuk2::Query::Term> matched_terms(match_count);
 
-    // Split the pattern at "|" characters, as a locale can have more than one
+    // Split the pattern at ";" characters, as a locale can have more than one
     // pattern that can be used for a given rule
-    QStringList rules = pattern.split(QLatin1Char('|'));
+    QStringList rules = pattern.split(QLatin1Char(';'));
 
     Q_FOREACH(const QString &rule, rules) {
         // Split the rule into parts that have to be matched
@@ -205,8 +206,9 @@ bool Parser::Private::match(const Nepomuk2::Query::Term &term, const QString &pa
         }
 
         QString value = term.toLiteralTerm().value().toString();
+        QRegExp regexp(pattern, Qt::CaseInsensitive, QRegExp::RegExp2);
 
-        return value.compare(pattern, Qt::CaseInsensitive) == 0;
+        return regexp.exactMatch(value);
     }
 
     // Parse the index and the name of a pattern like "<name0>"
