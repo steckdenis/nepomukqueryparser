@@ -18,6 +18,7 @@
 */
 
 #include "pass_sentby.h"
+#include "utils.h"
 
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/comparisonterm.h>
@@ -26,8 +27,12 @@
 
 QVector<Nepomuk2::Query::Term> PassSentBy::run(const QVector<Nepomuk2::Query::Term> &match) const
 {
-    QString value = match.at(0).toLiteralTerm().value().toString();
     QVector<Nepomuk2::Query::Term> rs;
+    QString value = termStringValue(match.at(0));
+
+    if (value.isNull()) {
+        return rs;
+    }
 
     // TODO: Query Nepomuk for the resource identifier of the sender
     rs.append(Nepomuk2::Query::ComparisonTerm(

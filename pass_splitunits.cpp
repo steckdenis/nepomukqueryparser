@@ -18,6 +18,7 @@
 */
 
 #include "pass_splitunits.h"
+#include "utils.h"
 
 #include <nepomuk2/literalterm.h>
 #include <soprano/literalvalue.h>
@@ -39,8 +40,12 @@ PassSplitUnits::PassSplitUnits()
 
 QVector<Nepomuk2::Query::Term> PassSplitUnits::run(const QVector<Nepomuk2::Query::Term> &match) const
 {
-    QString value = match.at(0).toLiteralTerm().value().toString();
     QVector<Nepomuk2::Query::Term> rs;
+    QString value = termStringValue(match.at(0));
+
+    if (value.isNull()) {
+        return rs;
+    }
 
     // Possible prefix
     QString prefix;

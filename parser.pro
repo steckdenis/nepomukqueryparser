@@ -12,6 +12,7 @@ LIBS += -lnepomukcore -lkdecore -lsoprano
 
 # Input
 HEADERS += parser.h \
+           utils.h \
            pass_splitunits.h \
            pass_numbers.h \
            pass_filesize.h \
@@ -20,6 +21,7 @@ HEADERS += parser.h \
            pass_comparators.h
 
 SOURCES += main.cpp \
+           utils.cpp \
            parser.cpp \
            pass_splitunits.cpp \
            pass_numbers.cpp \

@@ -94,30 +94,26 @@ void Parser::parse(const QString &query)
     while (progress) {
         progress = false;
 
-        progress |= d->runPass(d->pass_splitunits,
-            "<string0>", 1);
-        progress |= d->runPass(d->pass_numbers,
-            "<string0>", 1);
-        progress |= d->runPass(d->pass_filesize,
-            "<integer0> <string1>", 2);
-        progress |= d->runPass(d->pass_typehints,
-            "<string0>", 1);
+        progress |= d->runPass(d->pass_splitunits, "%1", 1);
+        progress |= d->runPass(d->pass_numbers, "%1", 1);
+        progress |= d->runPass(d->pass_filesize, "%1 %2", 2);
+        progress |= d->runPass(d->pass_typehints, "%1", 1);
         progress |= d->runPass(d->pass_sentby,
-            i18nc("Sender of an email", "sent by <string0>;from <string0>"), 1);
+            i18nc("Sender of an email", "sent by %1;from %1"), 1);
 
         // Comparators
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Contains);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Equality", "(contains|containing) <term0>"), 1);
+            i18nc("Equality", "(contains|containing) %1"), 1);
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Greater);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Strictly greater", "(greater|bigger|more) than <term0>;\\> <term0>"), 1);
+            i18nc("Strictly greater", "(greater|bigger|more) than %1;\\> %1"), 1);
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Smaller);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Strictly smaller", "(smaller|less|lesser) than <term0>;\\< <term0>"), 1);
+            i18nc("Strictly smaller", "(smaller|less|lesser) than %1;\\< %1"), 1);
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Equal);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Equality", "(equal|equals|=) <term0>;equal to <term0>"), 1);
+            i18nc("Equality", "(equal|equals|=) %1;equal to %1"), 1);
     }
 
     // Print the terms
@@ -228,15 +224,13 @@ bool Parser::Private::runPass(const T &pass, const QString &pattern, int match_c
 
 bool Parser::Private::match(const Nepomuk2::Query::Term &term, const QString &pattern, int &index)
 {
-    if (pattern.size() < 2) {
-        return false;
-    }
+    if (pattern.at(0) == QLatin1Char('%')) {
+        // Placeholder
+        index = pattern.mid(1).toInt() - 1;
 
-    // Match immediate values
-    if (pattern.at(0) != QLatin1Char('<') ||
-        pattern.at(pattern.size() - 1) != QLatin1Char('>') ||
-        !pattern.at(pattern.size() - 2).isDigit())
-    {
+        return true;
+    } else {
+        // Literal value that has to be matched against a regular expression
         if (!term.isLiteralTerm()) {
             return false;
         }
@@ -246,46 +240,5 @@ bool Parser::Private::match(const Nepomuk2::Query::Term &term, const QString &pa
 
         return regexp.exactMatch(value);
     }
-
-    // Parse the index and the name of a pattern like "<name0>"
-    QString name = pattern.mid(1, pattern.size() - 3);
-    index = pattern.at(pattern.size() - 2).digitValue();
-
-    // Match term types
-    if (name == "term") {
-        return true;
-    } else if (name == "type") {
-        return term.isResourceTerm();
-    } else if (name == "literal") {
-        return term.isLiteralTerm();
-    } else if (name == "comparison") {
-        return term.isComparisonTerm();
-    }
-
-    // Match literal sub-types
-    if (term.isLiteralTerm()) {
-        Soprano::LiteralValue value = term.toLiteralTerm().value();
-
-        if (name == "integer") {
-            return value.isInt() || value.isInt64();
-        } else if (name == "double") {
-            return value.isDouble();
-        } else if (name == "string") {
-            return value.isString();
-        }
-    }
-
-    // Match comparisons
-    if (term.isComparisonTerm()) {
-        QUrl uri = term.toComparisonTerm().property().uri();
-
-        if (name == "filesize") {
-            return uri == Nepomuk2::Vocabulary::NFO::fileSize();
-        } else if (name == "tag") {
-            return uri == Nepomuk2::Vocabulary::NAO::hasTag();
-        }
-    }
-
-    return false;
 }
 

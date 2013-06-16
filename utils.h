@@ -17,39 +17,13 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "pass_numbers.h"
-#include "utils.h"
+#ifndef __UTILS_H__
+#define __UTILS_H__
 
-#include <nepomuk2/literalterm.h>
-#include <soprano/literalvalue.h>
+#include <QString>
 
-#include <QtDebug>
+namespace Nepomuk2 { namespace Query { class Term; }}
 
-PassNumbers::PassNumbers()
-{
-}
+QString termStringValue(const Nepomuk2::Query::Term &term);
 
-QVector<Nepomuk2::Query::Term> PassNumbers::run(const QVector<Nepomuk2::Query::Term> &match) const
-{
-    QVector<Nepomuk2::Query::Term> rs;
-    QString value = termStringValue(match.at(0));
-
-    if (value.isNull()) {
-        return rs;
-    }
-
-    // Integer or double
-    bool is_integer = false;
-    bool is_double = false;
-    long long int as_integer = value.toLongLong(&is_integer);
-    double as_double = value.toDouble(&is_double);
-
-    // Prefer integers over doubles
-    if (is_integer) {
-        rs.append(Nepomuk2::Query::LiteralTerm(as_integer));
-    } else if (is_double) {
-        rs.append(Nepomuk2::Query::LiteralTerm(as_double));
-    }
-
-    return rs;
-}
+#endif

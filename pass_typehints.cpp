@@ -18,6 +18,7 @@
 */
 
 #include "pass_typehints.h"
+#include "utils.h"
 
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/resourcetypeterm.h>
@@ -52,8 +53,12 @@ void PassTypeHints::registerHints(const QUrl &type, const QString &hints)
 
 QVector<Nepomuk2::Query::Term> PassTypeHints::run(const QVector<Nepomuk2::Query::Term> &match) const
 {
-    QString value = match.at(0).toLiteralTerm().value().toString();
     QVector<Nepomuk2::Query::Term> rs;
+    QString value = termStringValue(match.at(0));
+
+    if (value.isNull()) {
+        return rs;
+    }
 
     if (type_hints.contains(value)) {
         rs.append(Nepomuk2::Query::ResourceTypeTerm(
