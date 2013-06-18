@@ -293,17 +293,17 @@ Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_
             Soprano::LiteralValue value = term.toLiteralTerm().value();
 
             if (value.isString()) {
-                QString content = value.toString();
+                QString content = value.toString().toLower();
 
-                if (content == QLatin1String("OR")) {
+                if (content == QLatin1String("or")) {
                     // Consume the OR term, the next term will be ORed with the previous
                     build_and = false;
                     continue;
-                } else if (content == QLatin1String("AND")) {
+                } else if (content == QLatin1String("and")) {
                     // Consume the AND term
                     build_and = true;
                     continue;
-                } else if (content == QLatin1String("!")) {
+                } else if (content == QLatin1String("!") || content == QLatin1String("not")) {
                     // Consume the negation
                     build_not = true;
                     continue;
@@ -313,6 +313,10 @@ Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_
                 } else if (content == QLatin1String(")")) {
                     // Done
                     return fused_term;
+                } else if (content.size() <= 2) {
+                    // Ignore small terms, they are typically "to", "a", etc.
+                    // NOTE: Some locales may want to have this filter removed
+                    continue;
                 }
             }
         }
