@@ -21,7 +21,7 @@
 #define __PASS_SPLITUNITS_H__
 
 #include <QString>
-#include <QVector>
+#include <QList>
 #include <QSet>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
@@ -31,7 +31,7 @@ class PassSplitUnits
     public:
         PassSplitUnits();
 
-        QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
+        QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
     private:
         QSet<QString> known_units;

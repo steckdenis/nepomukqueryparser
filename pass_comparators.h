@@ -20,7 +20,7 @@
 #ifndef __PASS_COMPARATORS_H__
 #define __PASS_COMPARATORS_H__
 
-#include <QVector>
+#include <QList>
 #include <nepomuk2/comparisonterm.h>
 
 class PassComparators
@@ -30,7 +30,7 @@ class PassComparators
 
         void setComparator(Nepomuk2::Query::ComparisonTerm::Comparator comparator);
 
-        QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
+        QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
     private:
         Nepomuk2::Query::ComparisonTerm::Comparator comparator;

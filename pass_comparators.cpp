@@ -31,9 +31,9 @@ void PassComparators::setComparator(Nepomuk2::Query::ComparisonTerm::Comparator 
     this->comparator = comparator;
 }
 
-QVector<Nepomuk2::Query::Term> PassComparators::run(const QVector<Nepomuk2::Query::Term> &match) const
+QList<Nepomuk2::Query::Term> PassComparators::run(const QList<Nepomuk2::Query::Term> &match) const
 {
-    QVector<Nepomuk2::Query::Term> rs;
+    QList<Nepomuk2::Query::Term> rs;
     Nepomuk2::Query::ComparisonTerm term;
 
     if (match.at(0).isComparisonTerm()) {

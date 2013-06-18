@@ -21,7 +21,7 @@
 #define __PASS_FILESIZE_H__
 
 #include <QString>
-#include <QVector>
+#include <QList>
 #include <QHash>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
@@ -31,7 +31,7 @@ class PassFileSize
     public:
         PassFileSize();
 
-        QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
+        QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
     private:
         void registerUnits(long long int multiplier, const QString &units);

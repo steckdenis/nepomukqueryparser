@@ -51,9 +51,9 @@ void PassTypeHints::registerHints(const QUrl &type, const QString &hints)
     }
 }
 
-QVector<Nepomuk2::Query::Term> PassTypeHints::run(const QVector<Nepomuk2::Query::Term> &match) const
+QList<Nepomuk2::Query::Term> PassTypeHints::run(const QList<Nepomuk2::Query::Term> &match) const
 {
-    QVector<Nepomuk2::Query::Term> rs;
+    QList<Nepomuk2::Query::Term> rs;
     QString value = termStringValue(match.at(0));
 
     if (value.isNull()) {

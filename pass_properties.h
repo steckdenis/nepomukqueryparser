@@ -20,7 +20,7 @@
 #ifndef __PASS_PROPERTIES_H__
 #define __PASS_PROPERTIES_H__
 
-#include <QVector>
+#include <QList>
 #include <QUrl>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
@@ -30,7 +30,7 @@ class PassProperties
     public:
         void setProperty(const QUrl &property);
 
-        QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
+        QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
     private:
         QUrl property;

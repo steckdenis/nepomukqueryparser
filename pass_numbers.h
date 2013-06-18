@@ -20,7 +20,7 @@
 #ifndef __PASS_NUMBERS_H__
 #define __PASS_NUMBERS_H__
 
-#include <QVector>
+#include <QList>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
 
@@ -29,7 +29,7 @@ class PassNumbers
     public:
         PassNumbers();
 
-        QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
+        QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 };
 
 #endif

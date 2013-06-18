@@ -48,9 +48,9 @@ void PassFileSize::registerUnits(long long int multiplier, const QString &units)
     }
 }
 
-QVector<Nepomuk2::Query::Term> PassFileSize::run(const QVector<Nepomuk2::Query::Term> &match) const
+QList<Nepomuk2::Query::Term> PassFileSize::run(const QList<Nepomuk2::Query::Term> &match) const
 {
-    QVector<Nepomuk2::Query::Term> rs;
+    QList<Nepomuk2::Query::Term> rs;
 
     if (!match.at(0).isLiteralTerm() || !match.at(1).isLiteralTerm() ||
         !match.at(0).toLiteralTerm().value().isInt64()) {

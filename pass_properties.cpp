@@ -29,9 +29,9 @@ void PassProperties::setProperty(const QUrl &property)
     this->property = property;
 }
 
-QVector<Nepomuk2::Query::Term> PassProperties::run(const QVector<Nepomuk2::Query::Term> &match) const
+QList<Nepomuk2::Query::Term> PassProperties::run(const QList<Nepomuk2::Query::Term> &match) const
 {
-    QVector<Nepomuk2::Query::Term> rs;
+    QList<Nepomuk2::Query::Term> rs;
     Nepomuk2::Query::Term term = match.at(0);
 
     if (term.isComparisonTerm()) {

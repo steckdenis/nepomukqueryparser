@@ -21,7 +21,7 @@
 #define __PASS_TYPEHINTS_H__
 
 #include <QString>
-#include <QVector>
+#include <QList>
 #include <QHash>
 #include <QUrl>
 
@@ -32,7 +32,7 @@ class PassTypeHints
     public:
         PassTypeHints();
 
-        QVector<Nepomuk2::Query::Term> run(const QVector<Nepomuk2::Query::Term> &match) const;
+        QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
     private:
         void registerHints(const QUrl &type, const QString &hints);

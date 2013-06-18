@@ -35,7 +35,7 @@
 #include <soprano/nao.h>
 #include <klocalizedstring.h>
 
-#include <QVector>
+#include <QList>
 #include <QRegExp>
 #include <QtDebug>
 
@@ -48,7 +48,7 @@ struct Parser::Private
     bool match(const Nepomuk2::Query::Term &term, const QString &pattern, int &index);
 
     // Terms on which the parser works
-    QVector<Nepomuk2::Query::Term> terms;
+    QList<Nepomuk2::Query::Term> terms;
 
     // Parsing passes (they cache translations, queries, etc)
     PassSplitUnits pass_splitunits;
@@ -136,7 +136,7 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     }
 
     // Fuse the terms into a big AND term and produce the query
-    Nepomuk2::Query::AndTerm final_term(d->terms.toList());
+    Nepomuk2::Query::AndTerm final_term(d->terms);
 
     qDebug() << final_term;
 
@@ -186,8 +186,12 @@ QStringList Parser::Private::split(const QString &query, bool split_separators)
 template<typename T>
 bool Parser::Private::runPass(const T &pass, const QString &pattern, int match_count)
 {
-    QVector<Nepomuk2::Query::Term> matched_terms(match_count);
+    QList<Nepomuk2::Query::Term> matched_terms;
     bool progress = false;
+
+    for (int i=0; i<match_count; ++i) {
+        matched_terms.append(Nepomuk2::Query::Term());
+    }
 
     // Split the pattern at ";" characters, as a locale can have more than one
     // pattern that can be used for a given rule
@@ -215,11 +219,16 @@ bool Parser::Private::runPass(const T &pass, const QString &pattern, int match_c
 
                 if (++part_index == parts.size()) {
                     // Match complete, run the pass on it
-                    QVector<Nepomuk2::Query::Term> replacement = pass.run(matched_terms);
+                    QList<Nepomuk2::Query::Term> replacement = pass.run(matched_terms);
 
                     if (replacement.count() > 0) {
                         // Replace terms first_match_index..i with replacement
-                        terms.remove(first_match_index, 1 + i - first_match_index);
+                        QList<Nepomuk2::Query::Term>::iterator first_remove =
+                            terms.begin() + first_match_index;
+                        QList<Nepomuk2::Query::Term>::iterator last_remove =
+                            terms.begin() + (i + 1);
+
+                        terms.erase(first_remove, last_remove);
 
                         for (int j=replacement.count()-1; j>=0; --j) {
                             terms.insert(first_match_index, replacement.at(j));
