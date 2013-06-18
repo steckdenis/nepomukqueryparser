@@ -35,10 +35,10 @@ PassFileSize::PassFileSize()
     registerUnits(1000000000LL, i18nc("Lower-case units corresponding to a gigabyte", "gb"));
     registerUnits(1000000000000LL, i18nc("Lower-case units corresponding to a terabyte", "tb"));
 
-    registerUnits(1LL << 10, i18nc("Lower-case units corresponding to a kibibyte", "kib"));
-    registerUnits(1LL << 20, i18nc("Lower-case units corresponding to a mebibyte", "mib"));
-    registerUnits(1LL << 30, i18nc("Lower-case units corresponding to a gibibyte", "gib"));
-    registerUnits(1LL << 40, i18nc("Lower-case units corresponding to a tebibyte", "tib"));
+    registerUnits(1LL << 10, i18nc("Lower-case units corresponding to a kibibyte", "kib k"));
+    registerUnits(1LL << 20, i18nc("Lower-case units corresponding to a mebibyte", "mib m"));
+    registerUnits(1LL << 30, i18nc("Lower-case units corresponding to a gibibyte", "gib g"));
+    registerUnits(1LL << 40, i18nc("Lower-case units corresponding to a tebibyte", "tib t"));
 }
 
 void PassFileSize::registerUnits(long long int multiplier, const QString &units)
