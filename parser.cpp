@@ -28,6 +28,7 @@
 
 #include <nepomuk2/andterm.h>
 #include <nepomuk2/orterm.h>
+#include <nepomuk2/negationterm.h>
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/property.h>
 #include <nepomuk2/nfo.h>
@@ -281,6 +282,7 @@ Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_
 {
     Nepomuk2::Query::Term fused_term;
     bool build_and = true;
+    bool build_not = false;
 
     // Fuse terms in nested AND and OR terms. "a AND b OR c" is fused as
     // "(a AND b) OR c"
@@ -301,6 +303,10 @@ Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_
                     // Consume the AND term
                     build_and = true;
                     continue;
+                } else if (content == QLatin1String("!")) {
+                    // Consume the negation
+                    build_not = true;
+                    continue;
                 } else if (content == QLatin1String("(")) {
                     // Fuse the nested query
                     term = fuseTerms(end_term_index + 1, end_term_index);
@@ -309,6 +315,11 @@ Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_
                     return fused_term;
                 }
             }
+        }
+
+        // Negate the term if needed
+        if (build_not) {
+            term = Nepomuk2::Query::NegationTerm::negateTerm(term);
         }
 
         // Add term to the fused term
@@ -328,8 +339,9 @@ Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_
             }
         }
 
-        // If there is no logical operator in the query, the default one is AND
+        // Default to AND, and don't invert terms
         build_and = true;
+        build_not = false;
     }
 
     return fused_term;
