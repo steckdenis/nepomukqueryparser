@@ -27,6 +27,7 @@
 #include "pass_comparators.h"
 
 #include <nepomuk2/andterm.h>
+#include <nepomuk2/orterm.h>
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/property.h>
 #include <nepomuk2/nfo.h>
@@ -46,6 +47,7 @@ struct Parser::Private
     template<typename T>
     bool runPass(const T &pass, const QString &pattern, int match_count);
     bool match(const Nepomuk2::Query::Term &term, const QString &pattern, int &index);
+    Nepomuk2::Query::Term fuseTerms(int first_term_index, int &end_term_index) const;
 
     // Terms on which the parser works
     QList<Nepomuk2::Query::Term> terms;
@@ -136,7 +138,8 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     }
 
     // Fuse the terms into a big AND term and produce the query
-    Nepomuk2::Query::AndTerm final_term(d->terms);
+    int end_index;
+    Nepomuk2::Query::Term final_term = d->fuseTerms(0, end_index);
 
     qDebug() << final_term;
 
@@ -274,3 +277,60 @@ bool Parser::Private::match(const Nepomuk2::Query::Term &term, const QString &pa
     }
 }
 
+Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_term_index) const
+{
+    Nepomuk2::Query::Term fused_term;
+    bool build_and = true;
+
+    // Fuse terms in nested AND and OR terms. "a AND b OR c" is fused as
+    // "(a AND b) OR c"
+    for (end_term_index=first_term_index; end_term_index<terms.size(); ++end_term_index) {
+        Nepomuk2::Query::Term term = terms.at(end_term_index);
+
+        if (term.isLiteralTerm()) {
+            Soprano::LiteralValue value = term.toLiteralTerm().value();
+
+            if (value.isString()) {
+                QString content = value.toString();
+
+                if (content == QLatin1String("OR")) {
+                    // Consume the OR term, the next term will be ORed with the previous
+                    build_and = false;
+                    continue;
+                } else if (content == QLatin1String("AND")) {
+                    // Consume the AND term
+                    build_and = true;
+                    continue;
+                } else if (content == QLatin1String("(")) {
+                    // Fuse the nested query
+                    term = fuseTerms(end_term_index + 1, end_term_index);
+                } else if (content == QLatin1String(")")) {
+                    // Done
+                    return fused_term;
+                }
+            }
+        }
+
+        // Add term to the fused term
+        if (!fused_term.isValid()) {
+            fused_term = term;
+        } else if (build_and) {
+            if (fused_term.isAndTerm()) {
+                fused_term.toAndTerm().addSubTerm(term);
+            } else {
+                fused_term = Nepomuk2::Query::AndTerm(fused_term, term);
+            }
+        } else {
+            if (fused_term.isOrTerm()) {
+                fused_term.toOrTerm().addSubTerm(term);
+            } else {
+                fused_term = Nepomuk2::Query::OrTerm(fused_term, term);
+            }
+        }
+
+        // If there is no logical operator in the query, the default one is AND
+        build_and = true;
+    }
+
+    return fused_term;
+}
