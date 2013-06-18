@@ -26,6 +26,7 @@
 #include "pass_properties.h"
 #include "pass_comparators.h"
 
+#include <nepomuk2/andterm.h>
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/property.h>
 #include <nepomuk2/nfo.h>
@@ -78,7 +79,7 @@ void Parser::reset()
     d->terms.clear();
 }
 
-void Parser::parse(const QString &query)
+Nepomuk2::Query::Query Parser::parse(const QString &query)
 {
     reset();
 
@@ -134,10 +135,12 @@ void Parser::parse(const QString &query)
             i18nc("Name of a file", "name %1;named %1"), 1);
     }
 
-    // Print the terms
-    Q_FOREACH(const Nepomuk2::Query::Term &term, d->terms) {
-        qDebug() << term.toString();
-    }
+    // Fuse the terms into a big AND term and produce the query
+    Nepomuk2::Query::AndTerm final_term(d->terms.toList());
+
+    qDebug() << final_term;
+
+    return Nepomuk2::Query::Query(final_term);
 }
 
 QStringList Parser::Private::split(const QString &query, bool split_separators)

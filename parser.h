@@ -21,6 +21,7 @@
 #define __PARSER_H__
 
 #include <QString>
+#include <nepomuk2/query.h>
 
 class Parser
 {
@@ -30,7 +31,7 @@ class Parser
         ~Parser();
 
         void reset();
-        void parse(const QString &query);
+        Nepomuk2::Query::Query parse(const QString &query);
 
     private:
         struct Private;
