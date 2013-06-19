@@ -26,12 +26,14 @@
 #include "pass_filesize.h"
 #include "pass_typehints.h"
 #include "pass_properties.h"
+#include "pass_subqueries.h"
 #include "pass_comparators.h"
 
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/property.h>
 #include <nepomuk2/nfo.h>
 #include <nepomuk2/nmo.h>
+#include <nepomuk2/nie.h>
 #include <soprano/literalvalue.h>
 #include <soprano/nao.h>
 #include <klocalizedstring.h>
@@ -57,6 +59,7 @@ struct Parser::Private
     PassTypeHints pass_typehints;
     PassComparators pass_comparators;
     PassProperties pass_properties;
+    PassSubqueries pass_subqueries;
 };
 
 Parser::Parser()
@@ -133,6 +136,11 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileName());
         progress |= d->runPass(d->pass_properties,
             i18nc("Name of a file", "name %1;named %1"));
+
+        // Different kinds of properties that need subqueries
+        d->pass_subqueries.setProperty(Nepomuk2::Vocabulary::NIE::relatedTo());
+        progress |= d->runPass(d->pass_subqueries,
+            i18nc("Related to a subquery", "related to ... ,"));
     }
 
     // Fuse the terms into a big AND term and produce the query

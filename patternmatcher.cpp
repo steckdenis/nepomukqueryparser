@@ -33,6 +33,7 @@ int PatternMatcher::matchPattern(QList<Nepomuk2::Query::Term> &matched_terms, in
     int pattern_index = 0;
     int term_index = index;
     bool match_anything = false;        // Match "..."
+    bool contains_catchall = false;
 
     while (pattern_index < pattern.count() && term_index < terms.count()) {
         const Nepomuk2::Query::Term &term = terms.at(term_index);
@@ -41,6 +42,7 @@ int PatternMatcher::matchPattern(QList<Nepomuk2::Query::Term> &matched_terms, in
         if (pattern.at(pattern_index) == QLatin1String("...")) {
             // Start to match anything
             match_anything = true;
+            contains_catchall = true;
             ++pattern_index;
 
             continue;
@@ -74,8 +76,11 @@ int PatternMatcher::matchPattern(QList<Nepomuk2::Query::Term> &matched_terms, in
         ++term_index;
     }
 
-    if (pattern_index != pattern.count()) {
+    if (!contains_catchall && pattern_index != pattern.count()) {
         // The pattern was not fully matched
+        // Patterns containing "..." typically end with an optional terminating
+        // term. Allow them to match even if we reach the end of the term list
+        // without encountering the terminating term.
         return 0;
     } else {
         return (term_index - index);
