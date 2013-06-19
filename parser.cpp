@@ -19,6 +19,7 @@
 
 #include "parser.h"
 #include "patternmatcher.h"
+#include "utils.h"
 
 #include "pass_splitunits.h"
 #include "pass_numbers.h"
@@ -27,9 +28,6 @@
 #include "pass_properties.h"
 #include "pass_comparators.h"
 
-#include <nepomuk2/andterm.h>
-#include <nepomuk2/orterm.h>
-#include <nepomuk2/negationterm.h>
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/property.h>
 #include <nepomuk2/nfo.h>
@@ -48,7 +46,6 @@ struct Parser::Private
 
     template<typename T>
     bool runPass(const T &pass, const QString &pattern);
-    Nepomuk2::Query::Term fuseTerms(int first_term_index, int &end_term_index) const;
 
     // Terms on which the parser works
     QList<Nepomuk2::Query::Term> terms;
@@ -140,7 +137,7 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
 
     // Fuse the terms into a big AND term and produce the query
     int end_index;
-    Nepomuk2::Query::Term final_term = d->fuseTerms(0, end_index);
+    Nepomuk2::Query::Term final_term = fuseTerms(d->terms, 0, end_index);
 
     qDebug() << final_term;
 
@@ -205,77 +202,4 @@ bool Parser::Private::runPass(const T &pass, const QString &pattern)
     }
 
     return progress;
-}
-
-Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_term_index) const
-{
-    Nepomuk2::Query::Term fused_term;
-    bool build_and = true;
-    bool build_not = false;
-
-    // Fuse terms in nested AND and OR terms. "a AND b OR c" is fused as
-    // "(a AND b) OR c"
-    for (end_term_index=first_term_index; end_term_index<terms.size(); ++end_term_index) {
-        Nepomuk2::Query::Term term = terms.at(end_term_index);
-
-        if (term.isLiteralTerm()) {
-            Soprano::LiteralValue value = term.toLiteralTerm().value();
-
-            if (value.isString()) {
-                QString content = value.toString().toLower();
-
-                if (content == QLatin1String("or")) {
-                    // Consume the OR term, the next term will be ORed with the previous
-                    build_and = false;
-                    continue;
-                } else if (content == QLatin1String("and")) {
-                    // Consume the AND term
-                    build_and = true;
-                    continue;
-                } else if (content == QLatin1String("!") || content == QLatin1String("not")) {
-                    // Consume the negation
-                    build_not = true;
-                    continue;
-                } else if (content == QLatin1String("(")) {
-                    // Fuse the nested query
-                    term = fuseTerms(end_term_index + 1, end_term_index);
-                } else if (content == QLatin1String(")")) {
-                    // Done
-                    return fused_term;
-                } else if (content.size() <= 2) {
-                    // Ignore small terms, they are typically "to", "a", etc.
-                    // NOTE: Some locales may want to have this filter removed
-                    continue;
-                }
-            }
-        }
-
-        // Negate the term if needed
-        if (build_not) {
-            term = Nepomuk2::Query::NegationTerm::negateTerm(term);
-        }
-
-        // Add term to the fused term
-        if (!fused_term.isValid()) {
-            fused_term = term;
-        } else if (build_and) {
-            if (fused_term.isAndTerm()) {
-                fused_term.toAndTerm().addSubTerm(term);
-            } else {
-                fused_term = Nepomuk2::Query::AndTerm(fused_term, term);
-            }
-        } else {
-            if (fused_term.isOrTerm()) {
-                fused_term.toOrTerm().addSubTerm(term);
-            } else {
-                fused_term = Nepomuk2::Query::OrTerm(fused_term, term);
-            }
-        }
-
-        // Default to AND, and don't invert terms
-        build_and = true;
-        build_not = false;
-    }
-
-    return fused_term;
 }

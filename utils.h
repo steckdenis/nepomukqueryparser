@@ -20,10 +20,14 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
-#include <QString>
+#include <nepomuk2/term.h>
 
-namespace Nepomuk2 { namespace Query { class Term; }}
+#include <QString>
+#include <QList>
 
 QString termStringValue(const Nepomuk2::Query::Term &term);
+Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms,
+                                int first_term_index,
+                                int &end_term_index);
 
 #endif
