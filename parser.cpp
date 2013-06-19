@@ -44,6 +44,12 @@
 
 struct Parser::Private
 {
+    Private()
+    : separators(i18nc(
+        "Characters that are kept in the query for further processing but are considered word boundaries",
+        ".,;:!?()[]{}<>="))
+    {}
+
     QStringList split(const QString &query, bool split_separators);
 
     template<typename T>
@@ -60,6 +66,9 @@ struct Parser::Private
     PassComparators pass_comparators;
     PassProperties pass_properties;
     PassSubqueries pass_subqueries;
+
+    // Locale-specific
+    QString separators;
 };
 
 Parser::Parser()
@@ -154,15 +163,10 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
 
 QStringList Parser::Private::split(const QString &query, bool split_separators)
 {
-    QString separators;
     QStringList parts;
     QString part;
     int size = query.size();
     bool between_quotes = false;
-
-    if (split_separators) {
-        separators = i18nc("Characters that are kept in the query for further processing but are considered word boundaries", ".,;:!?()[]{}<>=");
-    }
 
     for (int i=0; i<size; ++i) {
         QChar c = query.at(i);
