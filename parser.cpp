@@ -18,6 +18,7 @@
 */
 
 #include "parser.h"
+#include "patternmatcher.h"
 
 #include "pass_splitunits.h"
 #include "pass_numbers.h"
@@ -46,8 +47,7 @@ struct Parser::Private
     QStringList split(const QString &query, bool split_separators);
 
     template<typename T>
-    bool runPass(const T &pass, const QString &pattern, int match_count);
-    bool match(const Nepomuk2::Query::Term &term, const QString &pattern, int &index);
+    bool runPass(const T &pass, const QString &pattern);
     Nepomuk2::Query::Term fuseTerms(int first_term_index, int &end_term_index) const;
 
     // Terms on which the parser works
@@ -99,43 +99,43 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     while (progress) {
         progress = false;
 
-        progress |= d->runPass(d->pass_splitunits, "%1", 1);
-        progress |= d->runPass(d->pass_numbers, "%1", 1);
-        progress |= d->runPass(d->pass_filesize, "%1 %2", 2);
-        progress |= d->runPass(d->pass_typehints, "%1", 1);
+        progress |= d->runPass(d->pass_splitunits, "%1");
+        progress |= d->runPass(d->pass_numbers, "%1");
+        progress |= d->runPass(d->pass_filesize, "%1 %2");
+        progress |= d->runPass(d->pass_typehints, "%1");
 
         // Comparators
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Contains);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Equality", "(contains|containing) %1"), 1);
+            i18nc("Equality", "(contains|containing) %1"));
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Greater);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Strictly greater", "(greater|bigger|more) than %1;at least %1;\\> %1"), 1);
+            i18nc("Strictly greater", "(greater|bigger|more) than %1;at least %1;\\> %1"));
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Smaller);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Strictly smaller", "(smaller|less|lesser) than %1;at most %1;\\< %1"), 1);
+            i18nc("Strictly smaller", "(smaller|less|lesser) than %1;at most %1;\\< %1"));
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Equal);
         progress |= d->runPass(d->pass_comparators,
-            i18nc("Equality", "(equal|equals|=) %1;equal to %1"), 1);
+            i18nc("Equality", "(equal|equals|=) %1;equal to %1"));
 
         // Email-related properties
         d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageFrom());
         progress |= d->runPass(d->pass_properties,
-            i18nc("Sender of an e-mail", "sent by %1;from %1;sender is %1;sender %1"), 1);
+            i18nc("Sender of an e-mail", "sent by %1;from %1;sender is %1;sender %1"));
         d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageSubject());
         progress |= d->runPass(d->pass_properties,
-            i18nc("Title of an e-mail", "title %1"), 1);
+            i18nc("Title of an e-mail", "title %1"));
         d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageRecipient());
         progress |= d->runPass(d->pass_properties,
-            i18nc("Recipient of an e-mail", "sent to %1;to %1;recipient is %1;recipient %1"), 1);
+            i18nc("Recipient of an e-mail", "sent to %1;to %1;recipient is %1;recipient %1"));
 
         // File-related properties
         d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileSize());
         progress |= d->runPass(d->pass_properties,
-            i18nc("Size of a file", "size is %1;size %1;being %1 large;%1 large"), 1);
+            i18nc("Size of a file", "size is %1;size %1;being %1 large;%1 large"));
         d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileName());
         progress |= d->runPass(d->pass_properties,
-            i18nc("Name of a file", "name %1;named %1"), 1);
+            i18nc("Name of a file", "name %1;named %1"));
     }
 
     // Fuse the terms into a big AND term and produce the query
@@ -188,14 +188,9 @@ QStringList Parser::Private::split(const QString &query, bool split_separators)
 }
 
 template<typename T>
-bool Parser::Private::runPass(const T &pass, const QString &pattern, int match_count)
+bool Parser::Private::runPass(const T &pass, const QString &pattern)
 {
-    QList<Nepomuk2::Query::Term> matched_terms;
     bool progress = false;
-
-    for (int i=0; i<match_count; ++i) {
-        matched_terms.append(Nepomuk2::Query::Term());
-    }
 
     // Split the pattern at ";" characters, as a locale can have more than one
     // pattern that can be used for a given rule
@@ -204,78 +199,12 @@ bool Parser::Private::runPass(const T &pass, const QString &pattern, int match_c
     Q_FOREACH(const QString &rule, rules) {
         // Split the rule into parts that have to be matched
         QStringList parts = split(rule, false);
-        int part_index = 0;
-        int first_match_index = -1;
+        PatternMatcher matcher(terms, parts);
 
-        // Try to match the rule into the list of terms
-        for (int i=0; i<terms.size(); ++i) {
-            const Nepomuk2::Query::Term &term = terms.at(i);
-            int index = -1;
-
-            if (match(term, parts.at(part_index), index)) {
-                if (index != -1) {
-                    matched_terms[index] = term;
-                }
-
-                if (first_match_index == -1) {
-                    first_match_index = i;
-                }
-
-                if (++part_index == parts.size()) {
-                    // Match complete, run the pass on it
-                    QList<Nepomuk2::Query::Term> replacement = pass.run(matched_terms);
-
-                    if (replacement.count() > 0) {
-                        // Replace terms first_match_index..i with replacement
-                        QList<Nepomuk2::Query::Term>::iterator first_remove =
-                            terms.begin() + first_match_index;
-                        QList<Nepomuk2::Query::Term>::iterator last_remove =
-                            terms.begin() + (i + 1);
-
-                        terms.erase(first_remove, last_remove);
-
-                        for (int j=replacement.count()-1; j>=0; --j) {
-                            terms.insert(first_match_index, replacement.at(j));
-                        }
-
-                        // Re-explore the terms vector as indexes have changed
-                        progress = true;
-                        i = -1;
-                    }
-
-                    // Reinitialize the matching machinery
-                    first_match_index = -1;
-                    part_index = 0;
-                }
-            } else {
-                // The begin of the pattern matched but not the end
-                first_match_index = -1;
-                part_index = 0;
-            }
-        }
+        matcher.runPass(pass);
     }
 
     return progress;
-}
-
-bool Parser::Private::match(const Nepomuk2::Query::Term &term, const QString &pattern, int &index)
-{
-    if (pattern.at(0) == QLatin1Char('%')) {
-        // Placeholder
-        index = pattern.mid(1).toInt() - 1;
-
-        return true;
-    } else {
-        // Literal value that has to be matched against a regular expression
-        if (!term.isLiteralTerm()) {
-            return false;
-        }
-
-        QString value = term.toLiteralTerm().value().toString();
-        QRegExp regexp(pattern, Qt::CaseInsensitive, QRegExp::RegExp2);
-
-        return regexp.exactMatch(value);
-    }
 }
 
 Nepomuk2::Query::Term Parser::Private::fuseTerms(int first_term_index, int &end_term_index) const

@@ -12,6 +12,7 @@ LIBS += -lnepomukcore -lkdecore -lsoprano
 
 # Input
 HEADERS += parser.h \
+           patternmatcher.h \
            utils.h \
            pass_splitunits.h \
            pass_numbers.h \
@@ -21,6 +22,7 @@ HEADERS += parser.h \
            pass_comparators.h
 
 SOURCES += main.cpp \
+           patternmatcher.cpp \
            utils.cpp \
            parser.cpp \
            pass_splitunits.cpp \
