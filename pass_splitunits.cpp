@@ -30,7 +30,7 @@ PassSplitUnits::PassSplitUnits()
 : known_units(
     QSet<QString>::fromList(
         i18nc(
-            "List of file size units available in your language, in lowercase",
+            "List of lowercase prefixes or suffix that need to be split from values",
             "k m g b kb mb gb tb kib mib gib tib"
         ).split(QLatin1Char(' '))
     )

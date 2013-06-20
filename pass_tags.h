@@ -17,18 +17,28 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "parser.h"
+#ifndef __PASS_TAGS_H__
+#define __PASS_TAGS_H__
 
-#include <QCoreApplication>
-#include <QtDebug>
+#include <QList>
+#include <QUrl>
 
-int main(int argc, char **argv)
+namespace Nepomuk2 { namespace Query { class Term; }}
+
+class PassTags
 {
-    if (argc != 2)
-        return 0;
+    public:
+        PassTags();
 
-    QCoreApplication app(argc, argv);
-    Parser parser;
+        const QHash<QString, QUrl> &tags() const;
+        QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
-    parser.parse(argv[1]);
-}
+    private:
+        void fillCache();
+
+    private:
+        QHash<QString, QUrl> cached_tags;
+        bool cache_filled;
+};
+
+#endif

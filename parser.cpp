@@ -28,6 +28,7 @@
 #include "pass_properties.h"
 #include "pass_subqueries.h"
 #include "pass_comparators.h"
+#include "pass_tags.h"
 
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/property.h>
@@ -47,7 +48,7 @@ struct Parser::Private
     Private()
     : separators(i18nc(
         "Characters that are kept in the query for further processing but are considered word boundaries",
-        ".,;:!?()[]{}<>="))
+        ".,;:!?()[]{}<>=#+-"))
     {}
 
     QStringList split(const QString &query, bool split_separators);
@@ -66,6 +67,7 @@ struct Parser::Private
     PassComparators pass_comparators;
     PassProperties pass_properties;
     PassSubqueries pass_subqueries;
+    PassTags pass_tags;
 
     // Locale-specific
     QString separators;
@@ -112,6 +114,7 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         progress |= d->runPass(d->pass_numbers, "%1");
         progress |= d->runPass(d->pass_filesize, "%1 %2");
         progress |= d->runPass(d->pass_typehints, "%1");
+        progress |= d->runPass(d->pass_tags, "tagged as %1;has tag %1;tag is %1;# %1");
 
         // Comparators
         d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Contains);

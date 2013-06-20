@@ -43,11 +43,14 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
                     // Consume the OR term, the next term will be ORed with the previous
                     build_and = false;
                     continue;
-                } else if (content == QLatin1String("and")) {
+                } else if (content == QLatin1String("and") ||
+                           content == QLatin1String("+")) {
                     // Consume the AND term
                     build_and = true;
                     continue;
-                } else if (content == QLatin1String("!") || content == QLatin1String("not")) {
+                } else if (content == QLatin1String("!") ||
+                           content == QLatin1String("not") ||
+                           content == QLatin1String("-")) {
                     // Consume the negation
                     build_not = true;
                     continue;
