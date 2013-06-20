@@ -30,15 +30,15 @@
 PassFileSize::PassFileSize()
 {
     // File size units
-    registerUnits(1000LL, i18nc("Lower-case units corresponding to a kilobyte", "kb"));
-    registerUnits(1000000LL, i18nc("Lower-case units corresponding to a megabyte", "mb"));
-    registerUnits(1000000000LL, i18nc("Lower-case units corresponding to a gigabyte", "gb"));
-    registerUnits(1000000000000LL, i18nc("Lower-case units corresponding to a terabyte", "tb"));
+    registerUnits(1000LL, i18nc("Lower-case units corresponding to a kilobyte", "kb kilobyte kilobytes"));
+    registerUnits(1000000LL, i18nc("Lower-case units corresponding to a megabyte", "mb megabyte megabytes"));
+    registerUnits(1000000000LL, i18nc("Lower-case units corresponding to a gigabyte", "gb gigabyte gigabytes"));
+    registerUnits(1000000000000LL, i18nc("Lower-case units corresponding to a terabyte", "tb terabyte terabytes"));
 
-    registerUnits(1LL << 10, i18nc("Lower-case units corresponding to a kibibyte", "kib k"));
-    registerUnits(1LL << 20, i18nc("Lower-case units corresponding to a mebibyte", "mib m"));
-    registerUnits(1LL << 30, i18nc("Lower-case units corresponding to a gibibyte", "gib g"));
-    registerUnits(1LL << 40, i18nc("Lower-case units corresponding to a tebibyte", "tib t"));
+    registerUnits(1LL << 10, i18nc("Lower-case units corresponding to a kibibyte", "kib k kibibyte kibibytes"));
+    registerUnits(1LL << 20, i18nc("Lower-case units corresponding to a mebibyte", "mib m mebibyte mebibytes"));
+    registerUnits(1LL << 30, i18nc("Lower-case units corresponding to a gibibyte", "gib g gibibyte gibibytes"));
+    registerUnits(1LL << 40, i18nc("Lower-case units corresponding to a tebibyte", "tib t tebibyte tebibytes"));
 }
 
 void PassFileSize::registerUnits(long long int multiplier, const QString &units)
@@ -59,7 +59,7 @@ QList<Nepomuk2::Query::Term> PassFileSize::run(const QList<Nepomuk2::Query::Term
 
     // Number and unit
     long long int number = match.at(0).toLiteralTerm().value().toInt64();
-    QString unit = match.at(1).toLiteralTerm().value().toString();
+    QString unit = match.at(1).toLiteralTerm().value().toString().toLower();
 
     if (multipliers.contains(unit)) {
         rs.append(Nepomuk2::Query::ComparisonTerm(

@@ -21,6 +21,7 @@
 #define __PASS_NUMBERS_H__
 
 #include <QList>
+#include <QHash>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
 
@@ -30,6 +31,12 @@ class PassNumbers
         PassNumbers();
 
         QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
+
+    private:
+        void registerNames(long long int number, const QString &names);
+
+    private:
+        QHash<QString, long long int> number_names;
 };
 
 #endif
