@@ -41,6 +41,22 @@ QString termStringValue(const Nepomuk2::Query::Term &term)
     }
 }
 
+bool termIntValue(const Nepomuk2::Query::Term& term, int &value)
+{
+    if (!term.isLiteralTerm()) {
+        return false;
+    }
+
+    Soprano::LiteralValue v = term.toLiteralTerm().value();
+
+    if (!v.isInt() && !v.isInt64()) {
+        return false;
+    }
+
+    value = v.toInt();
+    return true;
+}
+
 Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int first_term_index, int& end_term_index)
 {
     Nepomuk2::Query::Term fused_term;

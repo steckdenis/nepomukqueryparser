@@ -17,57 +17,24 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef __PASS_DATEPERIODS_H__
-#define __PASS_DATEPERIODS_H__
+#ifndef __PASS_HOURMINUTE_H__
+#define __PASS_HOURMINUTE_H__
 
-#include <QString>
 #include <QList>
-#include <QHash>
-#include <QUrl>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
 
-class PassDatePeriods
+class PassHourMinute
 {
     public:
-        enum Period {
-            Year = 0,
-            Month,
-            Week,
-            Day,
-            Hour,
-            Minute,
-            Second,
-            VariablePeriod
-        };
+        PassHourMinute();
 
-        enum ValueType {
-            Value,
-            Offset,
-            InvertedOffset
-        };
-
-    public:
-        PassDatePeriods();
-
-        void setKind(Period period, ValueType value_type, bool fixed_value = false, int value = 0);
+        void setPm(bool pm);
 
         QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
-        Period periodFromName(const QString &name) const;
-        static QString nameOfPeriod(Period period);
-        static QUrl propertyUrl(Period period, bool offset);
-
     private:
-        void registerPeriod(Period period, const QString &names);
-
-    private:
-        QHash<QString, Period> periods;
-
-        Period period;
-        ValueType value_type;
-        bool fixed_value;
-        int value;
+        bool pm;
 };
 
 #endif

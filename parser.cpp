@@ -27,6 +27,7 @@
 #include "pass_typehints.h"
 #include "pass_properties.h"
 #include "pass_dateperiods.h"
+#include "pass_hourminute.h"
 #include "pass_subqueries.h"
 #include "pass_comparators.h"
 #include "pass_tags.h"
@@ -68,6 +69,7 @@ struct Parser::Private
     PassComparators pass_comparators;
     PassProperties pass_properties;
     PassDatePeriods pass_dateperiods;
+    PassHourMinute pass_hourminute;
     PassSubqueries pass_subqueries;
     PassTags pass_tags;
 
@@ -177,6 +179,14 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, true, 0);
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("The current day", "today"));
+
+        // Hours and minutes
+        d->pass_hourminute.setPm(true);
+        progress |= d->runPass(d->pass_hourminute,
+            i18nc("An hour (%1) and an optional minute (%2), PM", "%1 [:.] %2 pm;%1 h pm;%1 pm"));
+        d->pass_hourminute.setPm(false);
+        progress |= d->runPass(d->pass_hourminute,
+            i18nc("An hour (%1) and an optional minute (%2), AM", "%1 : %2;%1 h;%1 [:.] %2 am;%1 h am;%1 am;at %1 \\. %2"));
 
         d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, true, 0);
         progress |= d->runPass(d->pass_dateperiods,

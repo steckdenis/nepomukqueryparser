@@ -111,19 +111,9 @@ QList<Nepomuk2::Query::Term> PassDatePeriods::run(const QList<Nepomuk2::Query::T
     if (!fixed_value) {
         // Parse the value either from match.at(0) (there was no period) or
         // match.at(1)
-        const Nepomuk2::Query::Term &term = match.at(value_match_index);
-
-        if (!term.isLiteralTerm()) {
+        if (!termIntValue(match.at(value_match_index), v)) {
             return rs;
         }
-
-        Soprano::LiteralValue value = term.toLiteralTerm().value();
-
-        if (!value.isInt() && !value.isInt64()) {
-            return rs;
-        }
-
-        v = value.toInt();
     }
 
     // Create a comparison on the right "property", that will be used in a later
