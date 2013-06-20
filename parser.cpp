@@ -202,6 +202,10 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         d->pass_subqueries.setProperty(Nepomuk2::Vocabulary::NIE::relatedTo());
         progress |= d->runPass(d->pass_subqueries,
             i18nc("Related to a subquery", "related to ... ,"));
+
+        // %1.%2, when not an hour, is a double
+        progress |= d->runPass(d->pass_numbers,
+            i18nc("Real number, using your locale-specific decimal point", "%1 \\. %2"));
     }
 
     // Fuse the terms into a big AND term and produce the query

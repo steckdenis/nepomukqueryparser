@@ -51,27 +51,43 @@ void PassNumbers::registerNames(long long int number, const QString &names)
 QList<Nepomuk2::Query::Term> PassNumbers::run(const QList<Nepomuk2::Query::Term> &match) const
 {
     QList<Nepomuk2::Query::Term> rs;
-    QString value = termStringValue(match.at(0));
 
-    if (value.isNull()) {
-        return rs;
-    }
+    if (match.count() == 1) {
+        // Single integer number
+        QString value = termStringValue(match.at(0));
 
-    // Named integer
-    if (number_names.contains(value)) {
-        rs.append(Nepomuk2::Query::LiteralTerm(number_names.value(value)));
+        if (value.isNull()) {
+            return rs;
+        }
+
+        // Named integer
+        if (number_names.contains(value)) {
+            rs.append(Nepomuk2::Query::LiteralTerm(number_names.value(value)));
+        } else {
+            // Integer or double
+            bool is_integer = false;
+            long long int as_integer = value.toLongLong(&is_integer);
+
+            // Prefer integers over doubles
+            if (is_integer) {
+                rs.append(Nepomuk2::Query::LiteralTerm(as_integer));
+            }
+        }
     } else {
-        // Integer or double
-        bool is_integer = false;
-        bool is_double = false;
-        long long int as_integer = value.toLongLong(&is_integer);
-        double as_double = value.toDouble(&is_double);
+        // Two integer numbers, that will be transformed into a double
+        int decimal;
+        int fractionary;
 
-        // Prefer integers over doubles
-        if (is_integer) {
-            rs.append(Nepomuk2::Query::LiteralTerm(as_integer));
-        } else if (is_double) {
-            rs.append(Nepomuk2::Query::LiteralTerm(as_double));
+        if (termIntValue(match.at(0), decimal) && termIntValue(match.at(1), fractionary)) {
+            double f(fractionary);
+
+            while (f > 1) {
+                f /= 10.0;
+            }
+
+            rs.append(Nepomuk2::Query::LiteralTerm(
+                double(decimal) + f
+            ));
         }
     }
 
