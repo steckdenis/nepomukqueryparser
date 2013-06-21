@@ -30,7 +30,6 @@
 PassDatePeriods::PassDatePeriods()
 : period(Year),
   value_type(Value),
-  fixed_value(false),
   value(0)
 {
     registerPeriod(Year,
@@ -60,11 +59,10 @@ void PassDatePeriods::registerPeriod(Period period, const QString &names)
     periods.insert(nameOfPeriod(period), period);
 }
 
-void PassDatePeriods::setKind(PassDatePeriods::Period period, PassDatePeriods::ValueType value_type, bool fixed_value, int value)
+void PassDatePeriods::setKind(PassDatePeriods::Period period, PassDatePeriods::ValueType value_type, int value)
 {
     this->period = period;
     this->value_type = value_type;
-    this->fixed_value = fixed_value;
     this->value = value;
 }
 
@@ -108,7 +106,7 @@ QList<Nepomuk2::Query::Term> PassDatePeriods::run(const QList<Nepomuk2::Query::T
         value_match_index = 1;
     }
 
-    if (!fixed_value) {
+    if (v == 0 && value_match_index < match.count()) {
         // Parse the value either from match.at(0) (there was no period) or
         // match.at(1)
         if (!termIntValue(match.at(value_match_index), v)) {

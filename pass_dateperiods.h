@@ -50,7 +50,7 @@ class PassDatePeriods
     public:
         PassDatePeriods();
 
-        void setKind(Period period, ValueType value_type, bool fixed_value = false, int value = 0);
+        void setKind(Period period, ValueType value_type, int value = 0);
 
         QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
@@ -66,7 +66,6 @@ class PassDatePeriods
 
         Period period;
         ValueType value_type;
-        bool fixed_value;
         int value;
 };
 

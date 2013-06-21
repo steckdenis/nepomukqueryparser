@@ -43,7 +43,7 @@ void PassPeriodNames::registerNames(QHash<QString, int> &table, const QString &n
     QStringList list = names.split(QLatin1Char(' '));
 
     for (int i=0; i<list.count(); ++i) {
-        table.insert(list.at(i), i);
+        table.insert(list.at(i), i + 1);    // Count from 1 as calendars do this
     }
 }
 

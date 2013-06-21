@@ -167,21 +167,21 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("Removing an offset from a period of time (%1=period, %2=offset)", "%2 %1 ago"));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset, true, 1);
+        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset, 1);
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("Adding 1 to a period of time", "next %1"));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset, true, -1);
+        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset, -1);
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("Removing 1 to a period of time", "last %1"));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, true, 1);
+        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, 1);
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("In one day", "tomorrow"));
-        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, true, -1);
+        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, -1);
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("One day ago", "yesterday"));
-        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, true, 0);
+        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, 0);
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("The current day", "today"));
 
@@ -193,10 +193,10 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         progress |= d->runPass(d->pass_hourminute,
             i18nc("An hour (%1) and an optional minute (%2), AM", "%1 : %2;%1 h;%1 [:.] %2 am;%1 h am;%1 am;at %1 \\. %2"));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, true, 0);
+        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, 1);
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("First period (first day, month, etc)", "first %1"));
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, true, -1);
+        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, -1);
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("Last period (last day, month, etc)", "last %1"));
         d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value);
