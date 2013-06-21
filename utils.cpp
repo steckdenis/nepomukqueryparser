@@ -23,7 +23,6 @@
 #include <nepomuk2/andterm.h>
 #include <nepomuk2/orterm.h>
 #include <nepomuk2/negationterm.h>
-#include <nepomuk2/literalterm.h>
 #include <soprano/literalvalue.h>
 
 QString termStringValue(const Nepomuk2::Query::Term &term)

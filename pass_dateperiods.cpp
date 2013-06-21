@@ -84,7 +84,7 @@ PassDatePeriods::Period PassDatePeriods::periodFromName(const QString &name) con
 
 QUrl PassDatePeriods::propertyUrl(Period period, bool offset)
 {
-    return QUrl(QString("internal://dateperiod/%1?%2")
+    return QUrl(QString("date://%1/%2")
         .arg(nameOfPeriod(period), QLatin1String(offset ? "offset" : "value"))
     );
 }

@@ -39,7 +39,8 @@ class PassDatePeriods
             Hour,
             Minute,
             Second,
-            VariablePeriod
+            VariablePeriod,
+            MaxPeriod = VariablePeriod
         };
 
         enum ValueType {
