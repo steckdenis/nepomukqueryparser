@@ -52,21 +52,30 @@ QList<Nepomuk2::Query::Term> PassFileSize::run(const QList<Nepomuk2::Query::Term
 {
     QList<Nepomuk2::Query::Term> rs;
 
-    if (!match.at(0).isLiteralTerm() || !match.at(1).isLiteralTerm() ||
-        !match.at(0).toLiteralTerm().value().isInt64()) {
+    if (!match.at(0).isLiteralTerm() || !match.at(1).isLiteralTerm()) {
         return rs;
     }
 
-    // Number and unit
-    long long int number = match.at(0).toLiteralTerm().value().toInt64();
+    // Unit
     QString unit = match.at(1).toLiteralTerm().value().toString().toLower();
 
     if (multipliers.contains(unit)) {
-        rs.append(Nepomuk2::Query::ComparisonTerm(
-            Nepomuk2::Vocabulary::NFO::fileSize(),
-            Nepomuk2::Query::LiteralTerm(number * multipliers.value(unit)),
-            Nepomuk2::Query::ComparisonTerm::Equal
-        ));
+        long long int multiplier = multipliers.value(unit);
+        Soprano::LiteralValue value = match.at(0).toLiteralTerm().value();
+
+        if (value.isInt() || value.isInt64()) {
+            rs.append(Nepomuk2::Query::ComparisonTerm(
+                Nepomuk2::Vocabulary::NFO::fileSize(),
+                Nepomuk2::Query::LiteralTerm(value.toInt64() * multiplier),
+                Nepomuk2::Query::ComparisonTerm::Equal
+            ));
+        } else if (value.isDouble()) {
+            rs.append(Nepomuk2::Query::ComparisonTerm(
+                Nepomuk2::Vocabulary::NFO::fileSize(),
+                Nepomuk2::Query::LiteralTerm(value.toDouble() * double(multiplier)),
+                Nepomuk2::Query::ComparisonTerm::Equal
+            ));
+        }
     }
 
     return rs;

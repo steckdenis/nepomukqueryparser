@@ -51,7 +51,7 @@ struct Parser::Private
     Private()
     : separators(i18nc(
         "Characters that are kept in the query for further processing but are considered word boundaries",
-        ".,;:!?()[]{}<>=#+-"))
+        ",;:!?()[]{}<>=#+-"))
     {}
 
     QStringList split(const QString &query, bool split_separators);
@@ -188,10 +188,10 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         // Setting values of date-time periods (14:30, June 6, etc)
         d->pass_datevalues.setPm(true);
         progress |= d->runPass(d->pass_datevalues,
-            i18nc("An hour (%5) and an optional minute (%6), PM", "%5 [:.] %6 pm;%5 h pm;%5 pm"));
+            i18nc("An hour (%5) and an optional minute (%6), PM", "%5 : %6 pm;%5 h pm;%5 pm"));
         d->pass_datevalues.setPm(false);
         progress |= d->runPass(d->pass_datevalues,
-            i18nc("An hour (%5) and an optional minute (%6), AM", "%5 [:.] %6 am;%5 h am;%5 am;at %5 \\. %6"));
+            i18nc("An hour (%5) and an optional minute (%6), AM", "%5 : %6 am;%5 h am;%5 am"));
 
         progress |= d->runPass(d->pass_datevalues, i18nc(
             "A year (%1), month (%2), day (%3), day of week (%4), hour (%5), "
@@ -200,7 +200,7 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
             "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;%2 %3;%2 %1;"
             "%1 - %2 - %3;%1 - %2;%3 / %2 / %1;%3 / %2;"
             "in %1; in %2 %1;, %1;"
-            "%5 : %6;%5 : %6 : %7;%5 h;at %5 \\. %6;"
+            "%5 : %6;%5 : %6 : %7;%5 h;"
         ));
 
         d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, 1);
@@ -217,10 +217,6 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         d->pass_subqueries.setProperty(Nepomuk2::Vocabulary::NIE::relatedTo());
         progress |= d->runPass(d->pass_subqueries,
             i18nc("Related to a subquery", "related to ... ,"));
-
-        // %1.%2, when not an hour, is a double
-        progress |= d->runPass(d->pass_numbers,
-            i18nc("Real number, using your locale-specific decimal point", "%1 \\. %2"));
     }
 
     // Fuse the terms into a big AND term and produce the query
