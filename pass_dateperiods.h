@@ -35,6 +35,7 @@ class PassDatePeriods
             Month,
             Week,
             Day,
+            DayOfWeek,
             Hour,
             Minute,
             Second,

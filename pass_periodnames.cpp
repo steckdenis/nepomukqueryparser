@@ -54,7 +54,7 @@ QList<Nepomuk2::Query::Term> PassPeriodNames::run(const QList<Nepomuk2::Query::T
 
     if (day_names.contains(name)) {
         rs.append(Nepomuk2::Query::ComparisonTerm(
-            PassDatePeriods::propertyUrl(PassDatePeriods::Day, false),
+            PassDatePeriods::propertyUrl(PassDatePeriods::DayOfWeek, false),
             Nepomuk2::Query::LiteralTerm(day_names.value(name)),
             Nepomuk2::Query::ComparisonTerm::Equal
         ));

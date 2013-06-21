@@ -27,7 +27,7 @@
 #include "pass_typehints.h"
 #include "pass_properties.h"
 #include "pass_dateperiods.h"
-#include "pass_hourminute.h"
+#include "pass_datevalues.h"
 #include "pass_periodnames.h"
 #include "pass_subqueries.h"
 #include "pass_comparators.h"
@@ -70,7 +70,7 @@ struct Parser::Private
     PassComparators pass_comparators;
     PassProperties pass_properties;
     PassDatePeriods pass_dateperiods;
-    PassHourMinute pass_hourminute;
+    PassDateValues pass_datevalues;
     PassPeriodNames pass_periodnames;
     PassSubqueries pass_subqueries;
     PassTags pass_tags;
@@ -185,13 +185,23 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         progress |= d->runPass(d->pass_dateperiods,
             i18nc("The current day", "today"));
 
-        // Hours and minutes
-        d->pass_hourminute.setPm(true);
-        progress |= d->runPass(d->pass_hourminute,
-            i18nc("An hour (%1) and an optional minute (%2), PM", "%1 [:.] %2 pm;%1 h pm;%1 pm"));
-        d->pass_hourminute.setPm(false);
-        progress |= d->runPass(d->pass_hourminute,
-            i18nc("An hour (%1) and an optional minute (%2), AM", "%1 : %2;%1 h;%1 [:.] %2 am;%1 h am;%1 am;at %1 \\. %2"));
+        // Setting values of date-time periods (14:30, June 6, etc)
+        d->pass_datevalues.setPm(true);
+        progress |= d->runPass(d->pass_datevalues,
+            i18nc("An hour (%5) and an optional minute (%6), PM", "%5 [:.] %6 pm;%5 h pm;%5 pm"));
+        d->pass_datevalues.setPm(false);
+        progress |= d->runPass(d->pass_datevalues,
+            i18nc("An hour (%5) and an optional minute (%6), AM", "%5 [:.] %6 am;%5 h am;%5 am;at %5 \\. %6"));
+
+        progress |= d->runPass(d->pass_datevalues, i18nc(
+            "A year (%1), month (%2), day (%3), day of week (%4), hour (%5), "
+                "minute (%6), second (%7), in every combination supported by your language",
+            "%3 of %2 %1;%3 (st|nd|rd|th) %2 %1;%3 (st|nd|rd|th) of %2 %1;"
+            "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;%2 %3;%2 %1;"
+            "%1 - %2 - %3;%1 - %2;%3 / %2 / %1;%3 / %2;"
+            "in %1; in %2 %1;, %1;"
+            "%5 : %6;%5 : %6 : %7;%5 h;at %5 \\. %6;"
+        ));
 
         d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, 1);
         progress |= d->runPass(d->pass_dateperiods,

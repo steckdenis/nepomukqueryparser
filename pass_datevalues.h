@@ -17,17 +17,17 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef __PASS_HOURMINUTE_H__
-#define __PASS_HOURMINUTE_H__
+#ifndef __PASS_DATEVALUES_H__
+#define __PASS_DATEVALUES_H__
 
 #include <QList>
 
 namespace Nepomuk2 { namespace Query { class Term; }}
 
-class PassHourMinute
+class PassDateValues
 {
     public:
-        PassHourMinute();
+        PassDateValues();
 
         void setPm(bool pm);
 

@@ -46,6 +46,8 @@ PassDatePeriods::PassDatePeriods()
         i18nc("Space-separated list of words representing a minute", "minute minutes"));
     registerPeriod(Second,
         i18nc("Space-separated list of words representing a second", "second seconds"));
+
+    periods.insert(nameOfPeriod(DayOfWeek), DayOfWeek);
 }
 
 void PassDatePeriods::registerPeriod(Period period, const QString &names)
@@ -69,7 +71,7 @@ void PassDatePeriods::setKind(PassDatePeriods::Period period, PassDatePeriods::V
 QString PassDatePeriods::nameOfPeriod(Period period)
 {
     static const char *period_names[] = {
-        "year", "month", "week", "day", "hour", "minute", "second", ""
+        "year", "month", "week", "day", "dayofweek", "hour", "minute", "second", ""
     };
 
     return QLatin1String(period_names[(int)period]);

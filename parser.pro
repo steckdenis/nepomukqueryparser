@@ -21,7 +21,7 @@ HEADERS += parser.h \
            pass_tags.h \
            pass_properties.h \
            pass_dateperiods.h \
-           pass_hourminute.h \
+           pass_datevalues.h \
            pass_periodnames.h \
            pass_subqueries.h \
            pass_comparators.h
@@ -37,7 +37,7 @@ SOURCES += main.cpp \
            pass_tags.cpp \
            pass_properties.cpp \
            pass_dateperiods.cpp \
-           pass_hourminute.cpp \
+           pass_datevalues.cpp \
            pass_periodnames.cpp \
            pass_subqueries.cpp \
            pass_comparators.cpp
