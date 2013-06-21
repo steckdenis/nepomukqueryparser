@@ -240,7 +240,7 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
             "A year (%1), month (%2), day (%3), day of week (%4), hour (%5), "
                 "minute (%6), second (%7), in every combination supported by your language",
             "%3 of %2 %1;%3 (st|nd|rd|th) %2 %1;%3 (st|nd|rd|th) of %2 %1;"
-            "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;%2 %3;%2 %1;"
+            "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;%2 %3 (st|nd|rd|th);%2 %3;%2 %1;"
             "%1 - %2 - %3;%1 - %2;%3 / %2 / %1;%3 / %2;"
             "in %1; in %2 %1;, %1;"
             "%5 : %6;%5 : %6 : %7;%5 h;"
