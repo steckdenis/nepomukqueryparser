@@ -235,6 +235,12 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageRecipient());
     d->runPass(d->pass_properties,
         i18nc("Recipient of an e-mail", "sent to %1;to %1;recipient is %1;recipient %1"));
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::sentDate());
+    d->runPass(d->pass_properties,
+        i18nc("Sending date-time", "sent (at|on) %1;sent %1"));
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::receivedDate());
+    d->runPass(d->pass_properties,
+        i18nc("Receiving date-time", "received (at|on) %1;received %1"));
 
     // File-related properties
     d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileSize());
@@ -243,6 +249,12 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileName());
     d->runPass(d->pass_properties,
         i18nc("Name of a file", "name %1;named %1"));
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileCreated());
+    d->runPass(d->pass_properties,
+        i18nc("Date of creation", "created (at|on) %1;created %1"));
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileLastModified());
+    d->runPass(d->pass_properties,
+        i18nc("Date of last modification", "(modified|edited) (at|on) %1;(modified|edited) %1"));
 
     // Different kinds of properties that need subqueries
     d->pass_subqueries.setProperty(Nepomuk2::Vocabulary::NIE::relatedTo());
