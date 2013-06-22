@@ -47,7 +47,6 @@
 
 #include <QList>
 #include <QRegExp>
-#include <QtDebug>
 
 struct Field {
     enum Flags {
@@ -264,8 +263,6 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     // Fuse the terms into a big AND term and produce the query
     int end_index;
     Nepomuk2::Query::Term final_term = fuseTerms(d->terms, 0, end_index);
-
-    qDebug() << final_term;
 
     return Nepomuk2::Query::Query(final_term);
 }

@@ -30,5 +30,7 @@ int main(int argc, char **argv)
     QCoreApplication app(argc, argv);
     Parser parser;
 
-    parser.parse(argv[1]);
+    qDebug() << parser.parse(argv[1]);
+
+    return 0;
 }
