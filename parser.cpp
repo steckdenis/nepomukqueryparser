@@ -88,8 +88,8 @@ struct Parser::Private
     QStringList split(const QString &query, bool split_separators);
 
     template<typename T>
-    bool runPass(const T &pass, const QString &pattern);
-    bool foldDateTimes();
+    void runPass(const T &pass, const QString &pattern);
+    void foldDateTimes();
     void handleDateTimeComparison(DateTimeSpec &spec, const Nepomuk2::Query::ComparisonTerm &term);
 
     // Terms on which the parser works
@@ -143,117 +143,111 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         d->terms.append(Nepomuk2::Query::LiteralTerm(part));
     }
 
-    // Parse passes
-    bool progress = true;
+    // Prepare literal values
+    d->runPass(d->pass_splitunits, "%1");
+    d->runPass(d->pass_numbers, "%1");
+    d->runPass(d->pass_filesize, "%1 %2");
+    d->runPass(d->pass_typehints, "%1");
+    d->runPass(d->pass_tags, i18nc(
+        "A document is associated with a tag", "tagged as %1;has tag %1;tag is %1;# %1"));
 
-    while (progress) {
-        progress = false;
+    // Date-time periods
+    d->runPass(d->pass_periodnames, "%1");
 
-        progress |= d->runPass(d->pass_splitunits, "%1");
-        progress |= d->runPass(d->pass_numbers, "%1");
-        progress |= d->runPass(d->pass_filesize, "%1 %2");
-        progress |= d->runPass(d->pass_typehints, "%1");
-        progress |= d->runPass(d->pass_tags, i18nc(
-            "A document is associated with a tag", "tagged as %1;has tag %1;tag is %1;# %1"));
+    d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset);
+    d->runPass(d->pass_dateperiods,
+        i18nc("Adding an offset to a period of time (%1=period, %2=offset)", "in %2 %1"));
 
-        // Comparators
-        d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Contains);
-        progress |= d->runPass(d->pass_comparators,
-            i18nc("Equality", "(contains|containing) %1"));
-        d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Greater);
-        progress |= d->runPass(d->pass_comparators,
-            i18nc("Strictly greater", "(greater|bigger|more) than %1;at least %1;\\> %1"));
-        d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Smaller);
-        progress |= d->runPass(d->pass_comparators,
-            i18nc("Strictly smaller", "(smaller|less|lesser) than %1;at most %1;\\< %1"));
-        d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Equal);
-        progress |= d->runPass(d->pass_comparators,
-            i18nc("Equality", "(equal|equals|=) %1;equal to %1"));
+    d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::InvertedOffset);
+    d->runPass(d->pass_dateperiods,
+        i18nc("Removing an offset from a period of time (%1=period, %2=offset)", "%2 %1 ago"));
 
-        // Email-related properties
-        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageFrom());
-        progress |= d->runPass(d->pass_properties,
-            i18nc("Sender of an e-mail", "sent by %1;from %1;sender is %1;sender %1"));
-        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageSubject());
-        progress |= d->runPass(d->pass_properties,
-            i18nc("Title of an e-mail", "title %1"));
-        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageRecipient());
-        progress |= d->runPass(d->pass_properties,
-            i18nc("Recipient of an e-mail", "sent to %1;to %1;recipient is %1;recipient %1"));
+    d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset, 1);
+    d->runPass(d->pass_dateperiods,
+        i18nc("Adding 1 to a period of time", "next %1"));
 
-        // File-related properties
-        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileSize());
-        progress |= d->runPass(d->pass_properties,
-            i18nc("Size of a file", "size is %1;size %1;being %1 large;%1 large"));
-        d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileName());
-        progress |= d->runPass(d->pass_properties,
-            i18nc("Name of a file", "name %1;named %1"));
+    d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset, -1);
+    d->runPass(d->pass_dateperiods,
+        i18nc("Removing 1 to a period of time", "last %1"));
 
-        // Date-time periods
-        progress |= d->runPass(d->pass_periodnames, "%1");
+    d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, 1);
+    d->runPass(d->pass_dateperiods,
+        i18nc("In one day", "tomorrow"));
+    d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, -1);
+    d->runPass(d->pass_dateperiods,
+        i18nc("One day ago", "yesterday"));
+    d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, 0);
+    d->runPass(d->pass_dateperiods,
+        i18nc("The current day", "today"));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("Adding an offset to a period of time (%1=period, %2=offset)", "in %2 %1"));
+    d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, 1);
+    d->runPass(d->pass_dateperiods,
+        i18nc("First period (first day, month, etc)", "first %1"));
+    d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, -1);
+    d->runPass(d->pass_dateperiods,
+        i18nc("Last period (last day, month, etc)", "last %1"));
+    d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value);
+    d->runPass(d->pass_dateperiods,
+        i18nc("Setting the value of a period, as in 'third week' (%1=period, %2=value)", "%2 %1"));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::InvertedOffset);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("Removing an offset from a period of time (%1=period, %2=offset)", "%2 %1 ago"));
+    // Setting values of date-time periods (14:30, June 6, etc)
+    d->pass_datevalues.setPm(true);
+    d->runPass(d->pass_datevalues,
+        i18nc("An hour (%5) and an optional minute (%6), PM", "%5 : %6 pm;%5 h pm;%5 pm"));
+    d->pass_datevalues.setPm(false);
+    d->runPass(d->pass_datevalues,
+        i18nc("An hour (%5) and an optional minute (%6), AM", "%5 : %6 am;%5 h am;%5 am"));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset, 1);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("Adding 1 to a period of time", "next %1"));
+    d->runPass(d->pass_datevalues, i18nc(
+        "A year (%1), month (%2), day (%3), day of week (%4), hour (%5), "
+            "minute (%6), second (%7), in every combination supported by your language",
+        "%3 of %2 %1;%3 (st|nd|rd|th) %2 %1;%3 (st|nd|rd|th) of %2 %1;"
+        "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;%2 %3 (st|nd|rd|th);%2 %3;%2 %1;"
+        "%1 - %2 - %3;%1 - %2;%3 / %2 / %1;%3 / %2;"
+        "in %1; in %2 %1;, %1;"
+        "%5 : %6;%5 : %6 : %7;%5 h;"
+    ));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Offset, -1);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("Removing 1 to a period of time", "last %1"));
+    // Fold date-time properties into real DateTime values
+    d->foldDateTimes();
 
-        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, 1);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("In one day", "tomorrow"));
-        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, -1);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("One day ago", "yesterday"));
-        d->pass_dateperiods.setKind(PassDatePeriods::Day, PassDatePeriods::Offset, 0);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("The current day", "today"));
+    // Comparators
+    d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Contains);
+    d->runPass(d->pass_comparators,
+        i18nc("Equality", "(contains|containing) %1"));
+    d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Greater);
+    d->runPass(d->pass_comparators,
+        i18nc("Strictly greater", "(greater|bigger|more) than %1;at least %1;\\> %1"));
+    d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Smaller);
+    d->runPass(d->pass_comparators,
+        i18nc("Strictly smaller", "(smaller|less|lesser) than %1;at most %1;\\< %1"));
+    d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Equal);
+    d->runPass(d->pass_comparators,
+        i18nc("Equality", "(equal|equals|=) %1;equal to %1"));
 
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, 1);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("First period (first day, month, etc)", "first %1"));
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value, -1);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("Last period (last day, month, etc)", "last %1"));
-        d->pass_dateperiods.setKind(PassDatePeriods::VariablePeriod, PassDatePeriods::Value);
-        progress |= d->runPass(d->pass_dateperiods,
-            i18nc("Setting the value of a period, as in 'third week' (%1=period, %2=value)", "%2 %1"));
+    // Email-related properties
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageFrom());
+    d->runPass(d->pass_properties,
+        i18nc("Sender of an e-mail", "sent by %1;from %1;sender is %1;sender %1"));
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageSubject());
+    d->runPass(d->pass_properties,
+        i18nc("Title of an e-mail", "title %1"));
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageRecipient());
+    d->runPass(d->pass_properties,
+        i18nc("Recipient of an e-mail", "sent to %1;to %1;recipient is %1;recipient %1"));
 
-        // Setting values of date-time periods (14:30, June 6, etc)
-        d->pass_datevalues.setPm(true);
-        progress |= d->runPass(d->pass_datevalues,
-            i18nc("An hour (%5) and an optional minute (%6), PM", "%5 : %6 pm;%5 h pm;%5 pm"));
-        d->pass_datevalues.setPm(false);
-        progress |= d->runPass(d->pass_datevalues,
-            i18nc("An hour (%5) and an optional minute (%6), AM", "%5 : %6 am;%5 h am;%5 am"));
+    // File-related properties
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileSize());
+    d->runPass(d->pass_properties,
+        i18nc("Size of a file", "size is %1;size %1;being %1 large;%1 large"));
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileName());
+    d->runPass(d->pass_properties,
+        i18nc("Name of a file", "name %1;named %1"));
 
-        progress |= d->runPass(d->pass_datevalues, i18nc(
-            "A year (%1), month (%2), day (%3), day of week (%4), hour (%5), "
-                "minute (%6), second (%7), in every combination supported by your language",
-            "%3 of %2 %1;%3 (st|nd|rd|th) %2 %1;%3 (st|nd|rd|th) of %2 %1;"
-            "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;%2 %3 (st|nd|rd|th);%2 %3;%2 %1;"
-            "%1 - %2 - %3;%1 - %2;%3 / %2 / %1;%3 / %2;"
-            "in %1; in %2 %1;, %1;"
-            "%5 : %6;%5 : %6 : %7;%5 h;"
-        ));
-
-        // Fold date-time properties into real DateTime values
-        progress |= d->foldDateTimes();
-
-        // Different kinds of properties that need subqueries
-        d->pass_subqueries.setProperty(Nepomuk2::Vocabulary::NIE::relatedTo());
-        progress |= d->runPass(d->pass_subqueries,
-            i18nc("Related to a subquery", "related to ... ,"));
-    }
+    // Different kinds of properties that need subqueries
+    d->pass_subqueries.setProperty(Nepomuk2::Vocabulary::NIE::relatedTo());
+    d->runPass(d->pass_subqueries,
+        i18nc("Related to a subquery", "related to ... ,"));
 
     // Fuse the terms into a big AND term and produce the query
     int end_index;
@@ -300,10 +294,8 @@ QStringList Parser::Private::split(const QString &query, bool split_separators)
 }
 
 template<typename T>
-bool Parser::Private::runPass(const T &pass, const QString &pattern)
+void Parser::Private::runPass(const T &pass, const QString &pattern)
 {
-    bool progress = false;
-
     // Split the pattern at ";" characters, as a locale can have more than one
     // pattern that can be used for a given rule
     QStringList rules = pattern.split(QLatin1Char(';'));
@@ -315,8 +307,6 @@ bool Parser::Private::runPass(const T &pass, const QString &pattern)
 
         matcher.runPass(pass);
     }
-
-    return progress;
 }
 
 /*
@@ -473,12 +463,11 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
     return Nepomuk2::Query::LiteralTerm(QDateTime(date, time));
 }
 
-bool Parser::Private::foldDateTimes()
+void Parser::Private::foldDateTimes()
 {
     QList<Nepomuk2::Query::Term> new_terms;
 
     DateTimeSpec spec;
-    bool progress = false;
     bool spec_contains_interesting_data = false;
 
     spec.reset();
@@ -492,7 +481,6 @@ bool Parser::Private::foldDateTimes()
             if (comparison.property().uri().scheme() == QLatin1String("date")) {
                 handleDateTimeComparison(spec, comparison);
 
-                progress = true;
                 spec_contains_interesting_data = true;
                 comparison_encountered = true;
             }
@@ -517,5 +505,4 @@ bool Parser::Private::foldDateTimes()
     }
 
     terms.swap(new_terms);
-    return progress;
 }

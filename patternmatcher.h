@@ -10,10 +10,9 @@ class PatternMatcher
         PatternMatcher(QList<Nepomuk2::Query::Term> &terms, QStringList pattern);
 
         template<typename T>
-        bool runPass(const T &pass)
+        void runPass(const T &pass)
         {
             QList<Nepomuk2::Query::Term> matched_terms;
-            bool progress = false;
 
             for (int i=0; i<capture_count; ++i) {
                 matched_terms.append(Nepomuk2::Query::Term());
@@ -38,7 +37,6 @@ class PatternMatcher
                         }
 
                         // Re-explore the terms vector as indexes have changed
-                        progress = true;
                         index = -1;
                     }
 
@@ -49,8 +47,6 @@ class PatternMatcher
                     }
                 }
             }
-
-            return progress;
         }
 
     private:
