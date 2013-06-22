@@ -203,8 +203,8 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         "%3 of %2 %1;%3 (st|nd|rd|th) %2 %1;%3 (st|nd|rd|th) of %2 %1;"
         "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;%2 %3 (st|nd|rd|th);%2 %3;%2 %1;"
         "%1 - %2 - %3;%1 - %2;%3 / %2 / %1;%3 / %2;"
-        "in %1; in %2 %1;, %1;"
-        "%5 : %6;%5 : %6 : %7;%5 h;"
+        "in %2 %1; in %1;, %1;"
+        "%5 : %6 : %7;%5 : %6;%5 h;"
     ));
 
     // Fold date-time properties into real DateTime values
