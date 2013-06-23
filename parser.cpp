@@ -215,10 +215,10 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         i18nc("Equality", "(contains|containing) %1"));
     d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Greater);
     d->runPass(d->pass_comparators,
-        i18nc("Strictly greater", "(greater|bigger|more) than %1;at least %1;\\> %1"));
+        i18nc("Strictly greater", "(greater|bigger|more) than %1;at least %1;after %1;\\> %1"));
     d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Smaller);
     d->runPass(d->pass_comparators,
-        i18nc("Strictly smaller", "(smaller|less|lesser) than %1;at most %1;\\< %1"));
+        i18nc("Strictly smaller", "(smaller|less|lesser) than %1;at most %1;before %1;\\< %1"));
     d->pass_comparators.setComparator(Nepomuk2::Query::ComparisonTerm::Equal);
     d->runPass(d->pass_comparators,
         i18nc("Equality", "(equal|equals|=) %1;equal to %1"));
@@ -362,20 +362,24 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
     const Field &year = spec.fields[PassDatePeriods::Year];
     const Field &month = spec.fields[PassDatePeriods::Month];
     const Field &week = spec.fields[PassDatePeriods::Week];
-    const Field &day = spec.fields[PassDatePeriods::Day];
     const Field &dayofweek = spec.fields[PassDatePeriods::DayOfWeek];
+    const Field &day = spec.fields[PassDatePeriods::Day];
     const Field &hour = spec.fields[PassDatePeriods::Hour];
     const Field &minute = spec.fields[PassDatePeriods::Minute];
     const Field &second = spec.fields[PassDatePeriods::Second];
 
-    // Last period defined
+    // Last defined period
     PassDatePeriods::Period last_defined_date = PassDatePeriods::Day;   // If no date is given, use the current date-time
-    PassDatePeriods::Period last_defined_time = PassDatePeriods::Day;   // If no time is given, use 00:00:00
+    PassDatePeriods::Period last_defined_time = PassDatePeriods::Year;  // If no time is given, use 00:00:00
 
-    if (day.flags != Field::Unset || dayofweek.flags != Field::Unset) {
+    if (day.flags != Field::Unset) {
         last_defined_date = PassDatePeriods::Day;
+    } else if (dayofweek.flags != Field::Unset) {
+        last_defined_date = PassDatePeriods::DayOfWeek;
     } else if (week.flags != Field::Unset) {
         last_defined_date = PassDatePeriods::Week;
+    } else if (month.flags != Field::Unset) {
+        last_defined_date = PassDatePeriods::Month;
     } else if (year.flags != Field::Unset) {
         last_defined_date = PassDatePeriods::Year;
     }
@@ -404,7 +408,7 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
         calendar->setDate(
             date,
             fieldValue(year, last_defined_date >= PassDatePeriods::Year, calendar->year(cdate), 1),
-            fieldValue(day, last_defined_date >= PassDatePeriods::Day, calendar->dayOfYear(cdate), 1)
+            fieldValue(day, last_defined_date >= PassDatePeriods::Week, calendar->dayOfYear(cdate), 1)
         );
     }
 
@@ -421,7 +425,7 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
             isoweek + (week.value - 1) :
             // Week of year (or no week at all)
             fieldValue(week, last_defined_date >= PassDatePeriods::Week, isoweek, isoweek),
-        fieldValue(dayofweek, last_defined_date >= PassDatePeriods::Day, isoday, isoday)
+        fieldValue(dayofweek, last_defined_date >= PassDatePeriods::DayOfWeek, isoday, 1)
     );
 
     // Relative year, month, week, day of month
@@ -432,7 +436,7 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
         date = calendar->addMonths(date, month.value);
     }
     if (week.flags == Field::Relative) {
-        date = calendar->addDays(date, week.value * 7);
+        date = calendar->addDays(date, week.value * calendar->daysInWeek(date));
     }
     if (day.flags == Field::Relative) {
         date = calendar->addDays(date, day.value);
@@ -446,14 +450,23 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
     );
 
     // Relative time
-    time.addSecs(
+    QDateTime rs(date, time);
+
+    rs = rs.addSecs(
         fieldIsRelative(hour, hour.value * 60 * 60, 0) +
         fieldIsRelative(minute, minute.value * 60, 0) +
         fieldIsRelative(second, second.value, 0)
     );
 
+    // Store the last defined period in the millisecond part of the date-time.
+    // This way, equality comparisons with a date-time can be changed to comparisons
+    // against an interval whose size is defined by the last defined period.
+    rs = rs.addMSecs(
+        qMax(last_defined_date, last_defined_time)
+    );
+
     delete calendar;
-    return Nepomuk2::Query::LiteralTerm(QDateTime(date, time));
+    return Nepomuk2::Query::LiteralTerm(rs);
 }
 
 void Parser::Private::foldDateTimes()
