@@ -53,7 +53,7 @@ QList<Nepomuk2::Query::Term> PassNumbers::run(const QList<Nepomuk2::Query::Term>
     QList<Nepomuk2::Query::Term> rs;
 
     // Single integer number
-    QString value = termStringValue(match.at(0));
+    QString value = termStringValue(match.at(0)).toLower();
 
     if (value.isNull()) {
         return rs;

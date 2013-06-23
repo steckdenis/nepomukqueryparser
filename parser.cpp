@@ -46,7 +46,7 @@
 #include <klocalizedstring.h>
 
 #include <QList>
-#include <QRegExp>
+#include <QtDebug>
 
 struct Field {
     enum Flags {
@@ -192,19 +192,18 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     // Setting values of date-time periods (14:30, June 6, etc)
     d->pass_datevalues.setPm(true);
     d->runPass(d->pass_datevalues,
-        i18nc("An hour (%5) and an optional minute (%6), PM", "%5 : %6 pm;%5 h pm;%5 pm"));
+        i18nc("An hour (%5) and an optional minute (%6), PM", "at %5 : %6 pm;at %5 h pm;at %5 pm;%5 : %6 pm;%5 h pm;%5 pm"));
     d->pass_datevalues.setPm(false);
     d->runPass(d->pass_datevalues,
-        i18nc("An hour (%5) and an optional minute (%6), AM", "%5 : %6 am;%5 h am;%5 am"));
+        i18nc("An hour (%5) and an optional minute (%6), AM", "at %5 : %6 am;at %5 h am;at %5 am;at %5;%5 : %6 am;%5 : %6 : %7;%5 : %6;%5 h am;%5 h;%5 am"));
 
     d->runPass(d->pass_datevalues, i18nc(
         "A year (%1), month (%2), day (%3), day of week (%4), hour (%5), "
             "minute (%6), second (%7), in every combination supported by your language",
         "%3 of %2 %1;%3 (st|nd|rd|th) %2 %1;%3 (st|nd|rd|th) of %2 %1;"
-        "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;%2 %3 (st|nd|rd|th);%2 %3;%2 %1;"
+        "%3 of %2;%3 (st|nd|rd|th) %2;%3 (st|nd|rd|th) of %2;of %2 %1;%2 %3 (st|nd|rd|th);%2 %3;%2 %1;"
         "%1 - %2 - %3;%1 - %2;%3 / %2 / %1;%3 / %2;"
         "in %2 %1; in %1;, %1;"
-        "%5 : %6 : %7;%5 : %6;%5 h;"
     ));
 
     // Fold date-time properties into real DateTime values
@@ -334,29 +333,24 @@ void Parser::Private::handleDateTimeComparison(DateTimeSpec &spec, const Nepomuk
         (property_url.path() == QLatin1String("/offset") ? Field::Relative : Field::Absolute);
 }
 
-static int valueForFlags(const Field &field, int if_unset, int if_absolute, int if_relative)
+static int fieldIsRelative(const Field &field, int if_yes, int if_no)
+{
+    return (field.flags == Field::Relative ? if_yes : if_no);
+}
+
+static int fieldValue(const Field &field, bool in_defined_period, int now_value, int null_value)
 {
     switch (field.flags)
     {
         case Field::Unset:
-            return if_unset;
+            return (in_defined_period ? now_value : null_value);
         case Field::Absolute:
-            return if_absolute;
+            return field.value;
         case Field::Relative:
-            return if_relative;
+            return now_value;
     }
 
     return 0;
-}
-
-static int fieldIsSet(const Field &field, int if_yes, int if_no)
-{
-    return (field.flags != Field::Unset ? if_yes : if_no);
-}
-
-static int fieldIsRelative(const Field &field, int if_yes, int if_no)
-{
-    return (field.flags == Field::Relative ? if_yes : if_no);
 }
 
 static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spec)
@@ -364,7 +358,6 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
     KCalendarSystem *calendar = KCalendarSystem::create(KGlobal::locale()->calendarSystem());
     QDate cdate = QDate::currentDate();
     QTime ctime = QTime::currentTime();
-    QDate date;
 
     const Field &year = spec.fields[PassDatePeriods::Year];
     const Field &month = spec.fields[PassDatePeriods::Month];
@@ -375,54 +368,60 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
     const Field &minute = spec.fields[PassDatePeriods::Minute];
     const Field &second = spec.fields[PassDatePeriods::Second];
 
+    // Last period defined
+    PassDatePeriods::Period last_defined_date = PassDatePeriods::Day;   // If no date is given, use the current date-time
+    PassDatePeriods::Period last_defined_time = PassDatePeriods::Day;   // If no time is given, use 00:00:00
+
+    if (day.flags != Field::Unset || dayofweek.flags != Field::Unset) {
+        last_defined_date = PassDatePeriods::Day;
+    } else if (week.flags != Field::Unset) {
+        last_defined_date = PassDatePeriods::Week;
+    } else if (year.flags != Field::Unset) {
+        last_defined_date = PassDatePeriods::Year;
+    }
+
+    if (second.flags != Field::Unset) {
+        last_defined_time = PassDatePeriods::Second;
+    } else if (minute.flags != Field::Unset) {
+        last_defined_time = PassDatePeriods::Minute;
+    } else if (hour.flags != Field::Unset) {
+        last_defined_time = PassDatePeriods::Hour;
+    }
+
     // Absolute year, month, day of month
+    QDate date;
+
     if (month.flags != Field::Unset)
     {
         // Month set, day of month
         calendar->setDate(
             date,
-            valueForFlags(year,
-                          calendar->year(cdate),
-                          year.value,
-                          calendar->year(cdate)),
-            fieldIsRelative(month,
-                            calendar->month(cdate),
-                            month.value),
-            valueForFlags(day,
-                          1,
-                          day.value,
-                          calendar->day(cdate))
+            fieldValue(year, last_defined_date >= PassDatePeriods::Year, calendar->year(cdate), 1),
+            fieldValue(month, last_defined_date >= PassDatePeriods::Month, calendar->month(cdate), 1),
+            fieldValue(day, last_defined_date >= PassDatePeriods::Day, calendar->day(cdate), 1)
         );
     } else {
         calendar->setDate(
             date,
-            valueForFlags(year,
-                          calendar->year(cdate),
-                          year.value,
-                          calendar->year(cdate)),
-            valueForFlags(day,
-                          fieldIsSet(year, 1, calendar->dayOfYear(cdate)),
-                          day.value,
-                          calendar->dayOfYear(cdate))
+            fieldValue(year, last_defined_date >= PassDatePeriods::Year, calendar->year(cdate), 1),
+            fieldValue(day, last_defined_date >= PassDatePeriods::Day, calendar->dayOfYear(cdate), 1)
         );
     }
 
     // Absolute week and day of week
     int isoyear;
     int isoweek = calendar->week(date, KLocale::IsoWeekNumber, &isoyear);
+    int isoday = calendar->dayOfWeek(date);
 
     calendar->setDateIsoWeek(
         date,
         isoyear,
-        valueForFlags(week,
-                      isoweek,
-                      week.value,
-                      isoweek),
-        valueForFlags(dayofweek,
-                      calendar->dayOfWeek(date),
-                      dayofweek.value,
-                      calendar->dayOfWeek(date)
-        )
+        (week.flags == Field::Absolute && month.flags != Field::Unset) ?
+            // Week of month, isoweek is the first week of the month
+            isoweek + (week.value - 1) :
+            // Week of year (or no week at all)
+            fieldValue(week, last_defined_date >= PassDatePeriods::Week, isoweek, isoweek),
+        fieldValue(dayofweek, last_defined_date >= PassDatePeriods::Day, isoday, isoday)
     );
 
     // Relative year, month, week, day of month
@@ -441,24 +440,9 @@ static Nepomuk2::Query::LiteralTerm buildDateTimeLiteral(const DateTimeSpec &spe
 
     // Absolute time
     QTime time = QTime(
-        valueForFlags(hour,
-                      ctime.hour(),
-                      hour.value,
-                      ctime.hour()),
-        valueForFlags(minute,
-                      fieldIsSet(hour,
-                                 0,
-                                 ctime.minute()),
-                      minute.value,
-                      ctime.minute()),
-        valueForFlags(second,
-                      fieldIsSet(minute,
-                                 0,
-                                 fieldIsSet(hour,
-                                            0,
-                                            ctime.second())),
-                      second.value,
-                      ctime.second())
+        fieldValue(hour, last_defined_time >= PassDatePeriods::Hour, ctime.hour(), 0),
+        fieldValue(minute, last_defined_time >= PassDatePeriods::Minute, ctime.minute(), 0),
+        fieldValue(second, last_defined_time >= PassDatePeriods::Second, ctime.second(), 0)
     );
 
     // Relative time
