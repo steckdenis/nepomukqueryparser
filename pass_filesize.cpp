@@ -22,7 +22,6 @@
 
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/comparisonterm.h>
-#include <nepomuk2/nfo.h>
 #include <nepomuk2/property.h>
 #include <soprano/literalvalue.h>
 #include <klocalizedstring.h>
@@ -61,21 +60,15 @@ QList<Nepomuk2::Query::Term> PassFileSize::run(const QList<Nepomuk2::Query::Term
 
     if (multipliers.contains(unit)) {
         long long int multiplier = multipliers.value(unit);
-        Soprano::LiteralValue value = match.at(0).toLiteralTerm().value();
+        Nepomuk2::Query::LiteralTerm term = match.at(0).toLiteralTerm();
 
-        if (value.isInt() || value.isInt64()) {
-            rs.append(Nepomuk2::Query::ComparisonTerm(
-                Nepomuk2::Vocabulary::NFO::fileSize(),
-                Nepomuk2::Query::LiteralTerm(value.toInt64() * multiplier),
-                Nepomuk2::Query::ComparisonTerm::Equal
-            ));
-        } else if (value.isDouble()) {
-            rs.append(Nepomuk2::Query::ComparisonTerm(
-                Nepomuk2::Vocabulary::NFO::fileSize(),
-                Nepomuk2::Query::LiteralTerm(value.toDouble() * double(multiplier)),
-                Nepomuk2::Query::ComparisonTerm::Equal
-            ));
+        if (term.value().isDouble()) {
+            term.setValue(term.value().toDouble() * double(multiplier));
+        } else {
+            term.setValue(term.value().toInt64() * multiplier);
         }
+
+        rs.append(term);
     }
 
     return rs;
