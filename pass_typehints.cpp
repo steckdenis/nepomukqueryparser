@@ -27,6 +27,8 @@
 
 #include <nepomuk2/nfo.h>
 #include <nepomuk2/nmo.h>
+#include <nepomuk2/nco.h>
+#include <nepomuk2/ncal.h>
 
 PassTypeHints::PassTypeHints()
 {
@@ -40,8 +42,12 @@ PassTypeHints::PassTypeHints()
         i18nc("List of words representing an audio file", "music musics"));
     registerHints(Nepomuk2::Vocabulary::NFO::Document(),
         i18nc("List of words representing a document", "document documents"));
-    registerHints(Nepomuk2::Vocabulary::NMO::Email(),
+    registerHints(Nepomuk2::Vocabulary::NMO::Message(),
         i18nc("List of words representing an email", "mail mails email emails e-mail e-mails message messages"));
+    registerHints(Nepomuk2::Vocabulary::NCO::Contact(),
+        i18nc("List of words representing a contact", "person persons people contact contacts"));
+    registerHints(Nepomuk2::Vocabulary::NCAL::Event(),
+        i18nc("List of words representing an event", "event events"));
 }
 
 void PassTypeHints::registerHints(const QUrl &type, const QString &hints)

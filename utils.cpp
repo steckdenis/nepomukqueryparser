@@ -25,7 +25,11 @@
 #include <nepomuk2/orterm.h>
 #include <nepomuk2/negationterm.h>
 #include <nepomuk2/comparisonterm.h>
+#include <nepomuk2/resourcetypeterm.h>
 #include <nepomuk2/property.h>
+#include <nepomuk2/nie.h>
+#include <nepomuk2/nmo.h>
+#include <nepomuk2/nfo.h>
 #include <soprano/literalvalue.h>
 
 #include <klocale.h>
@@ -63,6 +67,24 @@ bool termIntValue(const Nepomuk2::Query::Term& term, int &value)
 }
 
 static Nepomuk2::Query::AndTerm intervalComparison(const Nepomuk2::Types::Property &prop,
+                                                   const Nepomuk2::Query::LiteralTerm &min,
+                                                   const Nepomuk2::Query::LiteralTerm &max)
+{
+    return Nepomuk2::Query::AndTerm(
+        Nepomuk2::Query::ComparisonTerm(
+            prop,
+            min,
+            Nepomuk2::Query::ComparisonTerm::GreaterOrEqual
+        ),
+        Nepomuk2::Query::ComparisonTerm(
+            prop,
+            max,
+            Nepomuk2::Query::ComparisonTerm::SmallerOrEqual
+        )
+    );
+}
+
+static Nepomuk2::Query::AndTerm dateTimeComparison(const Nepomuk2::Types::Property &prop,
                                                    const QDateTime &start_date_time)
 {
     KCalendarSystem *cal = KCalendarSystem::create(KGlobal::locale()->calendarSystem());
@@ -101,17 +123,10 @@ static Nepomuk2::Query::AndTerm intervalComparison(const Nepomuk2::Types::Proper
             break;
     }
 
-    return Nepomuk2::Query::AndTerm(
-        Nepomuk2::Query::ComparisonTerm(
-            prop,
-            Nepomuk2::Query::LiteralTerm(start_date_time),
-            Nepomuk2::Query::ComparisonTerm::GreaterOrEqual
-        ),
-        Nepomuk2::Query::ComparisonTerm(
-            prop,
-            Nepomuk2::Query::LiteralTerm(QDateTime(end_date, end_time)),
-            Nepomuk2::Query::ComparisonTerm::SmallerOrEqual
-        )
+    return intervalComparison(
+        prop,
+        Nepomuk2::Query::LiteralTerm(start_date_time),
+        Nepomuk2::Query::LiteralTerm(QDateTime(end_date, end_time))
     );
 }
 
@@ -120,6 +135,9 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
     Nepomuk2::Query::Term fused_term;
     bool build_and = true;
     bool build_not = false;
+
+    QUrl default_filesize_property = Nepomuk2::Vocabulary::NIE::byteSize();
+    QUrl default_datetime_property = Nepomuk2::Vocabulary::NIE::created();
 
     // Fuse terms in nested AND and OR terms. "a AND b OR c" is fused as
     // "(a AND b) OR c"
@@ -139,13 +157,38 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
                     // (except if you want to find documents edited precisely at
                     // the millisecond you want)
                     // Build a comparison against an interval
-                    term = intervalComparison(comparison.property(), value.toDateTime());
+                    term = dateTimeComparison(comparison.property(), value.toDateTime());
                 }
+            }
+        } else if (term.isResourceTypeTerm()) {
+            QUrl uri = term.toResourceTypeTerm().type().uri();
+
+            if (uri == Nepomuk2::Vocabulary::NMO::Message()) {
+                default_datetime_property = Nepomuk2::Vocabulary::NMO::receivedDate();
+                default_filesize_property = Nepomuk2::Vocabulary::NIE::contentSize();
+            } else if (uri == Nepomuk2::Vocabulary::NFO::FileDataObject() ||
+                       uri == Nepomuk2::Vocabulary::NFO::Document()) {
+                default_datetime_property = Nepomuk2::Vocabulary::NFO::fileLastModified();
+                default_filesize_property = Nepomuk2::Vocabulary::NFO::fileSize();
             }
         } else if (term.isLiteralTerm()) {
             Soprano::LiteralValue value = term.toLiteralTerm().value();
 
-            if (value.isString()) {
+            if (value.isDateTime()) {
+                // Default property for date-times
+                term = dateTimeComparison(
+                    default_datetime_property,
+                    value.toDateTime()
+                );
+            } else if (value.isInt() || value.isInt64()) {
+                long long int v = value.toInt64();
+
+                term = intervalComparison(
+                    default_filesize_property,
+                    Nepomuk2::Query::LiteralTerm(v * 80LL / 100LL),
+                    Nepomuk2::Query::LiteralTerm(v * 120LL / 100LL)
+                );
+            } else if (value.isString()) {
                 QString content = value.toString().toLower();
 
                 if (content == QLatin1String("or")) {
