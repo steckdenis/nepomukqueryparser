@@ -34,6 +34,7 @@
 
 #include <klocale.h>
 #include <kcalendarsystem.h>
+#include <klocalizedstring.h>
 
 QString termStringValue(const Nepomuk2::Query::Term &term)
 {
@@ -139,6 +140,10 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
     QUrl default_filesize_property = Nepomuk2::Vocabulary::NIE::byteSize();
     QUrl default_datetime_property = Nepomuk2::Vocabulary::NIE::created();
 
+    QString and_string = i18n("and");
+    QString or_string = i18n("or");
+    QString not_string = i18n("not");
+
     // Fuse terms in nested AND and OR terms. "a AND b OR c" is fused as
     // "(a AND b) OR c"
     for (end_term_index=first_term_index; end_term_index<terms.size(); ++end_term_index) {
@@ -191,17 +196,17 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
             } else if (value.isString()) {
                 QString content = value.toString().toLower();
 
-                if (content == QLatin1String("or")) {
+                if (content == or_string) {
                     // Consume the OR term, the next term will be ORed with the previous
                     build_and = false;
                     continue;
-                } else if (content == QLatin1String("and") ||
+                } else if (content == and_string ||
                            content == QLatin1String("+")) {
                     // Consume the AND term
                     build_and = true;
                     continue;
                 } else if (content == QLatin1String("!") ||
-                           content == QLatin1String("not") ||
+                           content == not_string ||
                            content == QLatin1String("-")) {
                     // Consume the negation
                     build_not = true;
