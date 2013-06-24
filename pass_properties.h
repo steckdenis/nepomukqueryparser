@@ -23,17 +23,37 @@
 #include <QList>
 #include <QUrl>
 
-namespace Nepomuk2 { namespace Query { class Term; }}
+#include <nepomuk2/literalterm.h>
 
 class PassProperties
 {
     public:
-        void setProperty(const QUrl &property);
+        enum Types {
+            Integer,
+            IntegerOrDouble,
+            String,
+            DateTime,
+            Tag,
+        };
 
+        PassProperties();
+
+        void setProperty(const QUrl &property, Types range);
+
+        const QHash<QString, QUrl> &tags() const;
         QList<Nepomuk2::Query::Term> run(const QList<Nepomuk2::Query::Term> &match) const;
 
     private:
+        Nepomuk2::Query::Term convertToRange(const Nepomuk2::Query::LiteralTerm &term) const;
+        void fillTagsCache();
+
+    private:
         QUrl property;
+        Types range;
+
+        // Cache for tags
+        QHash<QString, QUrl> cached_tags;
+        bool cached_tags_filled;
 };
 
 #endif

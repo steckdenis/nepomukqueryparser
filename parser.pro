@@ -18,7 +18,6 @@ HEADERS += parser.h \
            pass_numbers.h \
            pass_filesize.h \
            pass_typehints.h \
-           pass_tags.h \
            pass_properties.h \
            pass_dateperiods.h \
            pass_datevalues.h \
@@ -34,7 +33,6 @@ SOURCES += main.cpp \
            pass_numbers.cpp \
            pass_filesize.cpp \
            pass_typehints.cpp \
-           pass_tags.cpp \
            pass_properties.cpp \
            pass_dateperiods.cpp \
            pass_datevalues.cpp \

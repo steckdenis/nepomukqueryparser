@@ -31,7 +31,6 @@
 #include "pass_periodnames.h"
 #include "pass_subqueries.h"
 #include "pass_comparators.h"
-#include "pass_tags.h"
 
 #include <nepomuk2/literalterm.h>
 #include <nepomuk2/property.h>
@@ -105,7 +104,6 @@ struct Parser::Private
     PassDateValues pass_datevalues;
     PassPeriodNames pass_periodnames;
     PassSubqueries pass_subqueries;
-    PassTags pass_tags;
 
     // Locale-specific
     QString separators;
@@ -147,8 +145,6 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     d->runPass(d->pass_numbers, "%1");
     d->runPass(d->pass_filesize, "%1 %2");
     d->runPass(d->pass_typehints, "%1");
-    d->runPass(d->pass_tags, i18nc(
-        "A document is associated with a tag", "tagged as %1;has tag %1;tag is %1;# %1"));
 
     // Date-time periods
     d->runPass(d->pass_periodnames, "%1");
@@ -224,35 +220,40 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
         i18nc("Equality", "(equal|equals|=) %1;equal to %1"));
 
     // Email-related properties
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageFrom());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageFrom(), PassProperties::String);
     d->runPass(d->pass_properties,
         i18nc("Sender of an e-mail", "sent by %1;from %1;sender is %1;sender %1"));
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageSubject());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageSubject(), PassProperties::String);
     d->runPass(d->pass_properties,
         i18nc("Title of an e-mail", "title %1"));
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageRecipient());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::messageRecipient(), PassProperties::String);
     d->runPass(d->pass_properties,
         i18nc("Recipient of an e-mail", "sent to %1;to %1;recipient is %1;recipient %1"));
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::sentDate());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::sentDate(), PassProperties::DateTime);
     d->runPass(d->pass_properties,
         i18nc("Sending date-time", "sent (at|on) %1;sent %1"));
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::receivedDate());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NMO::receivedDate(), PassProperties::DateTime);
     d->runPass(d->pass_properties,
         i18nc("Receiving date-time", "received (at|on) %1;received %1"));
 
     // File-related properties
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileSize());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileSize(), PassProperties::IntegerOrDouble);
     d->runPass(d->pass_properties,
         i18nc("Size of a file", "size is %1;size %1;being %1 large;%1 large"));
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileName());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileName(), PassProperties::String);
     d->runPass(d->pass_properties,
         i18nc("Name of a file", "name %1;named %1"));
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileCreated());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileCreated(), PassProperties::DateTime);
     d->runPass(d->pass_properties,
         i18nc("Date of creation", "created (at|on) %1;created %1"));
-    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileLastModified());
+    d->pass_properties.setProperty(Nepomuk2::Vocabulary::NFO::fileLastModified(), PassProperties::DateTime);
     d->runPass(d->pass_properties,
         i18nc("Date of last modification", "(modified|edited) (at|on) %1;(modified|edited) %1"));
+
+    // Properties having a resource range (hasTag, messageFrom, etc)
+    d->pass_properties.setProperty(Soprano::Vocabulary::NAO::hasTag(), PassProperties::Tag);
+    d->runPass(d->pass_properties, i18nc(
+        "A document is associated with a tag", "tagged as %1;has tag %1;tag is %1;# %1"));
 
     // Different kinds of properties that need subqueries
     d->pass_subqueries.setProperty(Nepomuk2::Vocabulary::NIE::relatedTo());
