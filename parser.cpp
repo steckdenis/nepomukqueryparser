@@ -83,7 +83,7 @@ struct Parser::Private
         ",;:!?()[]{}<>=#+-"))
     {}
 
-    QStringList split(const QString &query, bool split_separators);
+    QStringList split(const QString &query, bool split_separators, QList<int> *positions = NULL);
 
     template<typename T>
     void runPass(const T &pass, const QString &pattern);
@@ -134,10 +134,17 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     reset();
 
     // Split the query into terms
-    QStringList parts = d->split(query, true);
+    QList<int> positions;
+    QStringList parts = d->split(query, true, &positions);
 
-    Q_FOREACH(const QString &part, parts) {
-        d->terms.append(Nepomuk2::Query::LiteralTerm(part));
+    for (int i=0; i<parts.count(); ++i) {
+        const QString &part = parts.at(i);
+        int position = positions.at(i);
+
+        Nepomuk2::Query::LiteralTerm term(part);
+        term.setPosition(position, part.size());
+
+        d->terms.append(term);
     }
 
     // Prepare literal values
@@ -267,7 +274,7 @@ Nepomuk2::Query::Query Parser::parse(const QString &query)
     return Nepomuk2::Query::Query(final_term);
 }
 
-QStringList Parser::Private::split(const QString &query, bool split_separators)
+QStringList Parser::Private::split(const QString &query, bool split_separators, QList<int> *positions)
 {
     QStringList parts;
     QString part;
@@ -286,11 +293,20 @@ QStringList Parser::Private::split(const QString &query, bool split_separators)
 
             // Add a separator, if any
             if (split_separators && separators.contains(c)) {
+                if (positions) {
+                    positions->append(i);
+                }
+
                 parts.append(QString(c));
             }
         } else if (c == '"') {
             between_quotes = !between_quotes;
         } else {
+            if (positions && part.size() == 0) {
+                // Start of a new part, save its position in the stream
+                positions->append(i);
+            }
+
             part.append(c);
         }
     }
@@ -476,6 +492,8 @@ void Parser::Private::foldDateTimes()
 
     DateTimeSpec spec;
     bool spec_contains_interesting_data = false;
+    int start_position = 1 << 30;
+    int end_position = 0;
 
     spec.reset();
 
@@ -490,6 +508,9 @@ void Parser::Private::foldDateTimes()
 
                 spec_contains_interesting_data = true;
                 comparison_encountered = true;
+
+                start_position = qMin(start_position, term.position());
+                end_position = qMax(end_position, term.position() + term.length());
             }
         }
 
@@ -497,9 +518,12 @@ void Parser::Private::foldDateTimes()
             if (spec_contains_interesting_data) {
                 // End a date-time spec and emit its xsd:DateTime value
                 new_terms.append(buildDateTimeLiteral(spec));
+                new_terms.last().setPosition(start_position, end_position - start_position);
 
                 spec.reset();
                 spec_contains_interesting_data = false;
+                start_position = 1 << 30;
+                end_position = 0;
             }
 
             new_terms.append(term);     // Preserve non-datetime terms
@@ -509,6 +533,7 @@ void Parser::Private::foldDateTimes()
     if (spec_contains_interesting_data) {
         // Query ending with a date-time, don't forget to build it
         new_terms.append(buildDateTimeLiteral(spec));
+        new_terms.last().setPosition(start_position, end_position - start_position);
     }
 
     terms.swap(new_terms);

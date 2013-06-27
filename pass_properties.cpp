@@ -73,7 +73,7 @@ void PassProperties::fillTagsCache()
     }
 }
 
-Nepomuk2::Query::Term PassProperties::convertToRange(const Nepomuk2::Query::LiteralTerm& term) const
+Nepomuk2::Query::Term PassProperties::convertToRange(const Nepomuk2::Query::LiteralTerm &term) const
 {
     Soprano::LiteralValue value = term.value();
 
@@ -105,7 +105,10 @@ Nepomuk2::Query::Term PassProperties::convertToRange(const Nepomuk2::Query::Lite
 
         case Tag:
             if (value.isString() && tags().contains(value.toString())) {
-                return Nepomuk2::Query::ResourceTerm(cached_tags.value(value.toString()));
+                Nepomuk2::Query::ResourceTerm rs(cached_tags.value(value.toString()));
+                rs.setPosition(term);
+
+                return rs;
             }
             break;
     }

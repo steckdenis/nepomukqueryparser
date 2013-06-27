@@ -71,24 +71,27 @@ static Nepomuk2::Query::AndTerm intervalComparison(const Nepomuk2::Types::Proper
                                                    const Nepomuk2::Query::LiteralTerm &min,
                                                    const Nepomuk2::Query::LiteralTerm &max)
 {
-    return Nepomuk2::Query::AndTerm(
-        Nepomuk2::Query::ComparisonTerm(
-            prop,
-            min,
-            Nepomuk2::Query::ComparisonTerm::GreaterOrEqual
-        ),
-        Nepomuk2::Query::ComparisonTerm(
-            prop,
-            max,
-            Nepomuk2::Query::ComparisonTerm::SmallerOrEqual
-        )
-    );
+    int start_position = qMin(min.position(), max.position());
+    int end_position = qMax(min.position() + min.length(), max.position() + max.length());
+
+    Nepomuk2::Query::ComparisonTerm greater(prop, min, Nepomuk2::Query::ComparisonTerm::GreaterOrEqual);
+    Nepomuk2::Query::ComparisonTerm smaller(prop, max, Nepomuk2::Query::ComparisonTerm::SmallerOrEqual);
+
+    greater.setPosition(start_position, end_position - start_position);
+    smaller.setPosition(greater);
+
+    Nepomuk2::Query::AndTerm total(greater, smaller);
+    total.setPosition(greater);
+
+    return total;
 }
 
 static Nepomuk2::Query::AndTerm dateTimeComparison(const Nepomuk2::Types::Property &prop,
-                                                   const QDateTime &start_date_time)
+                                                   const Nepomuk2::Query::LiteralTerm &term)
 {
     KCalendarSystem *cal = KCalendarSystem::create(KGlobal::locale()->calendarSystem());
+    QDateTime start_date_time = term.value().toDateTime();
+
     QDate start_date(start_date_time.date());
     QTime start_time(start_date_time.time());
     QDate end_date(start_date);
@@ -124,10 +127,13 @@ static Nepomuk2::Query::AndTerm dateTimeComparison(const Nepomuk2::Types::Proper
             break;
     }
 
+    Nepomuk2::Query::LiteralTerm end_term(QDateTime(end_date, end_time));
+    end_term.setPosition(term);
+
     return intervalComparison(
         prop,
-        Nepomuk2::Query::LiteralTerm(start_date_time),
-        Nepomuk2::Query::LiteralTerm(QDateTime(end_date, end_time))
+        term,
+        end_term
     );
 }
 
@@ -153,17 +159,14 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
             Nepomuk2::Query::ComparisonTerm &comparison = term.toComparisonTerm();
 
             if (comparison.comparator() == Nepomuk2::Query::ComparisonTerm::Equal &&
-                comparison.subTerm().isLiteralTerm())
+                comparison.subTerm().isLiteralTerm() &&
+                comparison.subTerm().toLiteralTerm().value().isDateTime())
             {
-                Soprano::LiteralValue value = comparison.subTerm().toLiteralTerm().value();
-
-                if (value.isDateTime()) {
-                    // We try to compare exactly with a date-time, which is impossible
-                    // (except if you want to find documents edited precisely at
-                    // the millisecond you want)
-                    // Build a comparison against an interval
-                    term = dateTimeComparison(comparison.property(), value.toDateTime());
-                }
+                // We try to compare exactly with a date-time, which is impossible
+                // (except if you want to find documents edited precisely at
+                // the millisecond you want)
+                // Build a comparison against an interval
+                term = dateTimeComparison(comparison.property(), comparison.subTerm().toLiteralTerm());
             }
         } else if (term.isResourceTypeTerm()) {
             QUrl uri = term.toResourceTypeTerm().type().uri();
@@ -183,16 +186,17 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
                 // Default property for date-times
                 term = dateTimeComparison(
                     default_datetime_property,
-                    value.toDateTime()
+                    term.toLiteralTerm()
                 );
             } else if (value.isInt() || value.isInt64()) {
                 long long int v = value.toInt64();
+                Nepomuk2::Query::LiteralTerm min(v * 80LL / 100LL);
+                Nepomuk2::Query::LiteralTerm max(v * 120LL / 100LL);
 
-                term = intervalComparison(
-                    default_filesize_property,
-                    Nepomuk2::Query::LiteralTerm(v * 80LL / 100LL),
-                    Nepomuk2::Query::LiteralTerm(v * 120LL / 100LL)
-                );
+                min.setPosition(term);
+                max.setPosition(term);
+
+                term = intervalComparison(default_filesize_property, min, max);
             } else if (value.isString()) {
                 QString content = value.toString().toLower();
 
@@ -227,7 +231,12 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
 
         // Negate the term if needed
         if (build_not) {
-            term = Nepomuk2::Query::NegationTerm::negateTerm(term);
+            Nepomuk2::Query::Term negated =
+                Nepomuk2::Query::NegationTerm::negateTerm(term);
+
+            negated.setPosition(term);
+
+            term = negated;
         }
 
         // Add term to the fused term
@@ -246,6 +255,16 @@ Nepomuk2::Query::Term fuseTerms(const QList<Nepomuk2::Query::Term> &terms, int f
                 fused_term = Nepomuk2::Query::OrTerm(fused_term, term);
             }
         }
+
+        // Position information
+        int start_position = qMin(fused_term.position(), term.position());
+        int end_position = qMax(fused_term.position() + fused_term.length(),
+                                term.position() + term.length());
+
+        fused_term.setPosition(
+            start_position,
+            end_position - start_position
+        );
 
         // Default to AND, and don't invert terms
         build_and = true;

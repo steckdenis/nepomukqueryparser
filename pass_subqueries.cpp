@@ -38,7 +38,8 @@ QList<Nepomuk2::Query::Term> PassSubqueries::run(const QList<Nepomuk2::Query::Te
 
     rs.append(Nepomuk2::Query::ComparisonTerm(
         property,
-        fuseTerms(match, 0, end_index)
+        fuseTerms(match, 0, end_index),
+        Nepomuk2::Query::ComparisonTerm::Equal
     ));
 
     return rs;

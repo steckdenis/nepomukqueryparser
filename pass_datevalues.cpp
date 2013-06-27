@@ -64,8 +64,9 @@ QList<Nepomuk2::Query::Term> PassDateValues::run(const QList<Nepomuk2::Query::Te
             const Nepomuk2::Query::Term &term = match.at(i);
             int value;
 
-            if (!termIntValue(match.at(i), value)) {
+            if (!termIntValue(term, value)) {
                 // The term is not a literal integer, but may be a typed comparison
+                // (month or day names)
                 if (!term.isComparisonTerm()) {
                     valid_input = false;
                     break;
@@ -94,13 +95,18 @@ QList<Nepomuk2::Query::Term> PassDateValues::run(const QList<Nepomuk2::Query::Te
             }
 
             // Build a comparison of the right type
+            Nepomuk2::Query::LiteralTerm value_term(value);
             progress = true;
+
+            value_term.setPosition(term);
 
             rs.append(Nepomuk2::Query::ComparisonTerm(
                 PassDatePeriods::propertyUrl(period, false),
-                Nepomuk2::Query::LiteralTerm(value),
+                value_term,
                 Nepomuk2::Query::ComparisonTerm::Equal
             ));
+
+            rs.last().setPosition(term);
         }
     }
 

@@ -52,16 +52,23 @@ QList<Nepomuk2::Query::Term> PassPeriodNames::run(const QList<Nepomuk2::Query::T
     QList<Nepomuk2::Query::Term> rs;
     QString name = termStringValue(match.at(0)).toLower();
 
+    Nepomuk2::Query::LiteralTerm value_term;
+    PassDatePeriods::Period period;
+
     if (day_names.contains(name)) {
-        rs.append(Nepomuk2::Query::ComparisonTerm(
-            PassDatePeriods::propertyUrl(PassDatePeriods::DayOfWeek, false),
-            Nepomuk2::Query::LiteralTerm(day_names.value(name)),
-            Nepomuk2::Query::ComparisonTerm::Equal
-        ));
+        period = PassDatePeriods::DayOfWeek;
+        value_term.setValue(day_names.value(name));
     } else if (month_names.contains(name)) {
+        period = PassDatePeriods::Month;
+        value_term.setValue(month_names.value(name));
+    }
+
+    if (value_term.isValid()) {
+        value_term.setPosition(match.at(0));
+
         rs.append(Nepomuk2::Query::ComparisonTerm(
-            PassDatePeriods::propertyUrl(PassDatePeriods::Month, false),
-            Nepomuk2::Query::LiteralTerm(month_names.value(name)),
+            PassDatePeriods::propertyUrl(period, false),
+            value_term,
             Nepomuk2::Query::ComparisonTerm::Equal
         ));
     }

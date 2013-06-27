@@ -47,16 +47,27 @@ int PatternMatcher::captureCount() const
     return max_capture;
 }
 
-int PatternMatcher::matchPattern(QList<Nepomuk2::Query::Term> &matched_terms, int index) const
+int PatternMatcher::matchPattern(QList<Nepomuk2::Query::Term> &matched_terms,
+                                 int index,
+                                 int &start_position,
+                                 int &end_position) const
 {
     int pattern_index = 0;
     int term_index = index;
     bool match_anything = false;        // Match "..."
     bool contains_catchall = false;
 
+    start_position = 1 << 30;
+    end_position = 0;
+
     while (pattern_index < pattern.count() && term_index < terms.count()) {
         const Nepomuk2::Query::Term &term = terms.at(term_index);
         int capture_index = -1;
+
+        // Always update start and end position, they will be simply discarded
+        // if the pattern ends not matching.
+        start_position = qMin(start_position, term.position());
+        end_position = qMax(end_position, term.position() + term.length());
 
         if (pattern.at(pattern_index) == QLatin1String("...")) {
             // Start to match anything

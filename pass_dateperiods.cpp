@@ -95,6 +95,8 @@ QList<Nepomuk2::Query::Term> PassDatePeriods::run(const QList<Nepomuk2::Query::T
     int value_match_index = 0;
     Period p = period;
     int v = value;
+    int value_position = 0;
+    int value_length = 0;
 
     if (p == VariablePeriod) {
         // Parse the period from match.at(0)
@@ -114,13 +116,19 @@ QList<Nepomuk2::Query::Term> PassDatePeriods::run(const QList<Nepomuk2::Query::T
         if (!termIntValue(match.at(value_match_index), v)) {
             return rs;
         }
+
+        value_position = match.at(value_match_index).position();
+        value_length = match.at(value_match_index).length();
     }
 
     // Create a comparison on the right "property", that will be used in a later
     // pass to build a real date-time object
+    Nepomuk2::Query::LiteralTerm value_term(value_type == InvertedOffset ? -v : v);
+    value_term.setPosition(value_position, value_length);
+
     rs.append(Nepomuk2::Query::ComparisonTerm(
         propertyUrl(p, value_type != Value),
-        Nepomuk2::Query::LiteralTerm(value_type == InvertedOffset ? -v : v),
+        value_term,
         Nepomuk2::Query::ComparisonTerm::Equal
     ));
 

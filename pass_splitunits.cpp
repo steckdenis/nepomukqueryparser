@@ -41,7 +41,11 @@ PassSplitUnits::PassSplitUnits()
 QList<Nepomuk2::Query::Term> PassSplitUnits::run(const QList<Nepomuk2::Query::Term> &match) const
 {
     QList<Nepomuk2::Query::Term> rs;
+    Nepomuk2::Query::LiteralTerm value_term;
+    Nepomuk2::Query::LiteralTerm unit_term;
+
     QString value = termStringValue(match.at(0));
+    int value_position = match.at(0).position();
 
     if (value.isNull()) {
         return rs;
@@ -55,10 +59,11 @@ QList<Nepomuk2::Query::Term> PassSplitUnits::run(const QList<Nepomuk2::Query::Te
     }
 
     if (prefix.size() < value.size() && known_units.contains(prefix)) {
-        value = value.mid(prefix.size());
+        unit_term.setValue(prefix);
+        unit_term.setPosition(value_position, prefix.size());
 
-        rs.append(Nepomuk2::Query::LiteralTerm(prefix));
-        rs.append(Nepomuk2::Query::LiteralTerm(value));
+        value = value.mid(prefix.size());
+        value_position += prefix.size();
     }
 
     // Possible postfix
@@ -71,8 +76,17 @@ QList<Nepomuk2::Query::Term> PassSplitUnits::run(const QList<Nepomuk2::Query::Te
     if (postfix.size() < value.size() && known_units.contains(postfix)) {
         value.resize(value.size() - postfix.size());
 
-        rs.append(Nepomuk2::Query::LiteralTerm(value));
-        rs.append(Nepomuk2::Query::LiteralTerm(postfix));
+        unit_term.setValue(postfix);
+        unit_term.setPosition(value_position + value.size(), postfix.size());
+    }
+
+    // Value
+    value_term.setValue(value);
+    value_term.setPosition(value_position, value.size());
+
+    if (unit_term.isValid()) {
+        rs.append(value_term);
+        rs.append(unit_term);
     }
 
     return rs;
